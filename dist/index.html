@@ -162,6 +162,11 @@ p { margin: .3em 0; }
 @media (max-height: 680px) { .emo { font-size: 56px; } .mi { font-size: 30px; width: 46px; height: 46px; } .mcard { padding: 10px; } .bignums b { font-size: 54px; min-width: 100px; } }
 .meter { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .meter small { color: #fff; font-weight: 900; font-size: 12px; }
+.grow { flex: 1; }
+.top .menu { margin-left: 0; }
+.titlemute { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 16px; }
+.vol { display: flex; flex-direction: column; gap: 6px; font-weight: 800; margin: 12px 0 18px; }
+.vol input { width: 100%; height: 32px; accent-color: #22c55e; }
 </style>
 </head>
 <body>
@@ -1618,6 +1623,115 @@ function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) 
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ } }
 </script>
 <script>
+// RAJNEETI — sound effects and music, synthesised with Web Audio so the game
+// needs no audio files and keeps working offline.
+
+const Sound = (() => {
+  const KEY = 'rajneeti.sound';
+  const settings = { sfx: .7, music: .4, muted: false };
+  try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* storage blocked */ }
+
+  let ctx = null, sfxBus = null, musicBus = null, musicTimer = null, step = 0, nextAt = 0;
+
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
+
+  function applyVolumes() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    sfxBus.gain.setTargetAtTime(settings.muted ? 0 : settings.sfx, t, .03);
+    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .5, t, .1);
+  }
+
+  // Browsers only allow audio after the player touches the screen.
+  function unlock() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      sfxBus = ctx.createGain(); sfxBus.connect(ctx.destination);
+      musicBus = ctx.createGain(); musicBus.connect(ctx.destination);
+      applyVolumes();
+      startMusic();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+  }
+
+  function tone(freq, dur, { type = 'sine', vol = .3, at = 0, to = null, bus = sfxBus } = {}) {
+    const t = ctx.currentTime + at;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(bus);
+    o.start(t); o.stop(t + dur + .02);
+  }
+
+  function whoosh(dur = .25, vol = .25) {
+    const t = ctx.currentTime;
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3000, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    src.connect(f); f.connect(g); g.connect(sfxBus);
+    src.start(t);
+  }
+
+  const C5 = 523.25, E5 = 659.25, G5 = 783.99, C6 = 1046.5;
+  const SFX = {
+    tap: () => tone(660, .06, { type: 'triangle', vol: .18 }),
+    deal: () => tone(320, .12, { type: 'triangle', vol: .15, to: 640 }),
+    good: () => [C5, E5, G5].forEach((f, i) => tone(f, .14, { type: 'triangle', vol: .22, at: i * .07 })),
+    bad: () => { tone(392, .18, { type: 'sawtooth', vol: .12 }); tone(311, .3, { type: 'sawtooth', vol: .12, at: .14 }); },
+    coin: () => { tone(988, .08, { type: 'square', vol: .1 }); tone(1319, .22, { type: 'square', vol: .1, at: .07 }); },
+    swipe: () => whoosh(.22, .3),
+    tick: () => tone(1400, .03, { type: 'square', vol: .05 }),
+    news: () => { tone(880, .14, { type: 'triangle', vol: .2 }); tone(660, .2, { type: 'triangle', vol: .2, at: .13 }); },
+    win: () => { [C5, E5, G5, C6].forEach((f, i) => tone(f, i === 3 ? .7 : .16, { type: 'triangle', vol: .25, at: i * .13 })); tone(C5 / 2, .9, { vol: .2, at: .39 }); },
+    lose: () => [G5, E5, C5].forEach((f, i) => tone(f / 2, .35, { type: 'triangle', vol: .2, at: i * .25 })),
+  };
+
+  function play(name) {
+    if (!ctx || settings.muted || !settings.sfx || !SFX[name]) return;
+    try { SFX[name](); } catch (e) { /* audio node limits on old devices */ }
+  }
+
+  // Gentle looping tune on a Sa–Re–Ga–Pa–Dha scale over a tanpura-like drone.
+  const SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
+  const TUNE = [0, 2, 3, 4, 3, 2, 0, -1, 1, 2, 3, 5, 4, 3, 2, -1, 3, 4, 5, 6, 5, 4, 3, 2, 0, 2, 1, 0, 1, 2, 0, -1];
+  const BEAT = .3;
+
+  function startMusic() {
+    nextAt = ctx.currentTime + .2;
+    musicTimer = setInterval(() => {
+      if (document.hidden || settings.muted || !settings.music) { nextAt = ctx.currentTime + .1; return; }
+      while (nextAt < ctx.currentTime + .6) {
+        const at = nextAt - ctx.currentTime;
+        const n = TUNE[step % TUNE.length];
+        if (n >= 0) tone(SCALE[n], BEAT * 1.6, { type: 'triangle', vol: .12, at, bus: musicBus });
+        if (step % 8 === 0) {
+          tone(130.81, BEAT * 8, { vol: .09, at, bus: musicBus });
+          tone(196.0, BEAT * 8, { vol: .05, at: at + BEAT * 2, bus: musicBus });
+        }
+        step++; nextAt += BEAT;
+      }
+    }, 150);
+  }
+
+  return {
+    unlock, play,
+    get settings() { return settings; },
+    set(k, v) { settings[k] = v; applyVolumes(); persist(); },
+    toggleMute() { settings.muted = !settings.muted; applyVolumes(); persist(); return settings.muted; },
+  };
+})();
+</script>
+<script>
 // RAJNEETI — casual mobile game interface. One big card, a few big buttons.
 
 const UI = { screen: 'title', reveal: null, setup: null, toastT: null, deal: null, pdeal: null, card: 0 };
@@ -1631,6 +1745,7 @@ const REFORM_ICON = { gst: '🧾', labour: '🏭', farmmkt: '🌽', msp: '🌾',
 function toast(msg, kind = '') {
   const t = $('#toast');
   t.textContent = msg; t.className = 'toast show ' + kind;
+  if (kind) Sound.play(kind === 'good' ? 'good' : 'bad');
   clearTimeout(UI.toastT);
   UI.toastT = setTimeout(() => { t.className = 'toast'; }, 2600);
 }
@@ -1659,13 +1774,18 @@ function tug(you, A, label = 'Get 272 to win 👑') {
   </div>`;
 }
 
+function muteBtn() {
+  return `<button class="menu" data-a="mute" aria-label="Sound on or off">${Sound.settings.muted ? '🔇' : '🔊'}</button>`;
+}
+
 function topbar(chips) {
-  return `<header class="top">${chips.map(c => `<span class="chip">${c}</span>`).join('')}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
+  return `<header class="top">${chips.map(c => `<span class="chip">${c}</span>`).join('')}<span class="grow"></span>${muteBtn()}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
 }
 
 // ---------------- title & setup ----------------
 function renderTitle() {
   return `<div class="screen title">
+    <div class="titlemute">${muteBtn()}</div>
     <div class="logo-art">🏛️</div>
     <h1 class="logo">RAJNEETI</h1>
     <p class="sub">Become Prime Minister!</p>
@@ -1714,6 +1834,7 @@ function dealCampaign() {
   if (cards.length < 3 && !cards.some(c => c.k === 'fundraise')) cards.push({ k: 'fundraise' });
   if (cards.length < 3 && C.funds >= 15) cards.push({ k: 'rally', s: battle[1].s.id });
   UI.deal = cards;
+  Sound.play('deal');
 }
 
 function moveCard(c, i) {
@@ -1784,7 +1905,8 @@ function renderResults() {
     UI.reveal = { n: 0 };
     const step = () => {
       if (!UI.reveal || G.phase !== 'results') return;
-      UI.reveal.n++; buzz(5);
+      UI.reveal.n++; buzz(5); Sound.play('tick');
+      if (UI.reveal.n === order.length) Sound.play(r.youBloc >= MAJORITY ? 'win' : r.aBloc >= MAJORITY ? 'lose' : 'news');
       render();
       if (UI.reveal.n < order.length) UI.reveal.timer = setTimeout(step, 180);
     };
@@ -1935,6 +2057,11 @@ function render() {
   else html = renderGameOver();
   $('#app').innerHTML = html;
   bindSwipe();
+  // ring a bell when a new news card appears
+  const ev = G && ((G.phase === 'campaign' && G.camp.event) || (G.phase === 'gov' && G.gov.events[0]));
+  const key = ev ? ev.id + JSON.stringify(ev.ctx) + (G.camp ? G.camp.week : '') + (G.gov ? G.gov.q : '') : null;
+  if (key && key !== UI.lastEvent) Sound.play('news');
+  UI.lastEvent = key;
 }
 
 function openModal(html) {
@@ -1974,7 +2101,7 @@ function bindSwipe() {
 }
 
 function flyOut(card, dir, then) {
-  buzz(15);
+  buzz(15); Sound.play('swipe');
   card.style.transform = `translateX(${dir * 520}px) rotate(${dir * 30}deg)`;
   setTimeout(then, 200);
 }
@@ -2038,7 +2165,11 @@ const ACTIONS = {
     render();
   },
   cev(d) { UI.deal = null; handle(resolveCampaignEvent(+d.i)); },
-  skipreveal() { clearTimeout(UI.reveal.timer); UI.reveal.n = 999; render(); },
+  skipreveal() {
+    clearTimeout(UI.reveal.timer); UI.reveal.n = 999;
+    const r = G.result; Sound.play(r.youBloc >= MAJORITY ? 'win' : r.aBloc >= MAJORITY ? 'lose' : 'news');
+    render();
+  },
   afterresults() {
     UI.reveal = null; afterResults(); save(); UI.card = 0; render();
     if (G.phase === 'gov') welcomePM();
@@ -2087,10 +2218,24 @@ const ACTIONS = {
   reelect() { goToElection(false); UI.deal = null; UI.pdeal = null; UI.picked = []; render(); },
   menu() {
     openModal(`<h2>Menu</h2><div class="answers">
+      <button class="gbtn blue" data-a="soundmenu">🔊 Sound</button>
       <button class="gbtn blue" data-a="help">📖 How to play</button>
       ${G && G.phase === 'gov' ? '<button class="gbtn blue" data-a="allies">🤝 My friends</button>' : ''}
       <button class="gbtn orange" data-a="quit">🏠 Save & exit</button>
       <button class="gbtn green" data-a="closemodal">▶ Resume</button></div>`);
+  },
+  mute() {
+    const m = Sound.toggleMute();
+    document.querySelectorAll('[data-a=mute]').forEach(b => { b.textContent = m ? '🔇' : '🔊'; });
+    toast(m ? '🔇 Sound off' : '🔊 Sound on');
+  },
+  soundmenu() {
+    const s = Sound.settings, pct = v => Math.round(v * 100);
+    openModal(`<h2>🔊 Sound</h2>
+      <label class="vol" for="vol-sfx"><span>🎵 Game sounds</span><input id="vol-sfx" type="range" min="0" max="100" value="${pct(s.sfx)}"></label>
+      <label class="vol" for="vol-music"><span>🎶 Music</span><input id="vol-music" type="range" min="0" max="100" value="${pct(s.music)}"></label>
+      <button class="gbtn ${s.muted ? 'green' : 'orange'}" data-a="mute">${s.muted ? '🔊 Turn sound on' : '🔇 Turn all sound off'}</button>
+      <button class="gbtn green" data-a="closemodal">OK</button>`);
   },
   quit() { save(); UI.screen = 'title'; G = null; render(); },
 };
@@ -2104,9 +2249,18 @@ function welcomePM() {
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]');
   if (!el || el.disabled) return;
+  Sound.unlock();
+  if (el.dataset.a !== 'mute') Sound.play('tap');
   if ($('#popup')) { if (!el.closest('#popup')) return; closeModal(); }
   ACTIONS[el.dataset.a] && ACTIONS[el.dataset.a](el.dataset);
 });
+
+// Volume sliders change the sound as you drag; play a sample so the level is easy to judge.
+document.addEventListener('input', e => {
+  if (e.target.id === 'vol-sfx') { Sound.set('sfx', e.target.value / 100); Sound.play('tap'); }
+  if (e.target.id === 'vol-music') Sound.set('music', e.target.value / 100);
+});
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
 
 render();
 </script>

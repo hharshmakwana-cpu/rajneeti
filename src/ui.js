@@ -11,6 +11,7 @@ const REFORM_ICON = { gst: '🧾', labour: '🏭', farmmkt: '🌽', msp: '🌾',
 function toast(msg, kind = '') {
   const t = $('#toast');
   t.textContent = msg; t.className = 'toast show ' + kind;
+  if (kind) Sound.play(kind === 'good' ? 'good' : 'bad');
   clearTimeout(UI.toastT);
   UI.toastT = setTimeout(() => { t.className = 'toast'; }, 2600);
 }
@@ -39,13 +40,18 @@ function tug(you, A, label = 'Get 272 to win 👑') {
   </div>`;
 }
 
+function muteBtn() {
+  return `<button class="menu" data-a="mute" aria-label="Sound on or off">${Sound.settings.muted ? '🔇' : '🔊'}</button>`;
+}
+
 function topbar(chips) {
-  return `<header class="top">${chips.map(c => `<span class="chip">${c}</span>`).join('')}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
+  return `<header class="top">${chips.map(c => `<span class="chip">${c}</span>`).join('')}<span class="grow"></span>${muteBtn()}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
 }
 
 // ---------------- title & setup ----------------
 function renderTitle() {
   return `<div class="screen title">
+    <div class="titlemute">${muteBtn()}</div>
     <div class="logo-art">🏛️</div>
     <h1 class="logo">RAJNEETI</h1>
     <p class="sub">Become Prime Minister!</p>
@@ -94,6 +100,7 @@ function dealCampaign() {
   if (cards.length < 3 && !cards.some(c => c.k === 'fundraise')) cards.push({ k: 'fundraise' });
   if (cards.length < 3 && C.funds >= 15) cards.push({ k: 'rally', s: battle[1].s.id });
   UI.deal = cards;
+  Sound.play('deal');
 }
 
 function moveCard(c, i) {
@@ -164,7 +171,8 @@ function renderResults() {
     UI.reveal = { n: 0 };
     const step = () => {
       if (!UI.reveal || G.phase !== 'results') return;
-      UI.reveal.n++; buzz(5);
+      UI.reveal.n++; buzz(5); Sound.play('tick');
+      if (UI.reveal.n === order.length) Sound.play(r.youBloc >= MAJORITY ? 'win' : r.aBloc >= MAJORITY ? 'lose' : 'news');
       render();
       if (UI.reveal.n < order.length) UI.reveal.timer = setTimeout(step, 180);
     };
@@ -315,6 +323,11 @@ function render() {
   else html = renderGameOver();
   $('#app').innerHTML = html;
   bindSwipe();
+  // ring a bell when a new news card appears
+  const ev = G && ((G.phase === 'campaign' && G.camp.event) || (G.phase === 'gov' && G.gov.events[0]));
+  const key = ev ? ev.id + JSON.stringify(ev.ctx) + (G.camp ? G.camp.week : '') + (G.gov ? G.gov.q : '') : null;
+  if (key && key !== UI.lastEvent) Sound.play('news');
+  UI.lastEvent = key;
 }
 
 function openModal(html) {
@@ -354,7 +367,7 @@ function bindSwipe() {
 }
 
 function flyOut(card, dir, then) {
-  buzz(15);
+  buzz(15); Sound.play('swipe');
   card.style.transform = `translateX(${dir * 520}px) rotate(${dir * 30}deg)`;
   setTimeout(then, 200);
 }
@@ -418,7 +431,11 @@ const ACTIONS = {
     render();
   },
   cev(d) { UI.deal = null; handle(resolveCampaignEvent(+d.i)); },
-  skipreveal() { clearTimeout(UI.reveal.timer); UI.reveal.n = 999; render(); },
+  skipreveal() {
+    clearTimeout(UI.reveal.timer); UI.reveal.n = 999;
+    const r = G.result; Sound.play(r.youBloc >= MAJORITY ? 'win' : r.aBloc >= MAJORITY ? 'lose' : 'news');
+    render();
+  },
   afterresults() {
     UI.reveal = null; afterResults(); save(); UI.card = 0; render();
     if (G.phase === 'gov') welcomePM();
@@ -467,10 +484,24 @@ const ACTIONS = {
   reelect() { goToElection(false); UI.deal = null; UI.pdeal = null; UI.picked = []; render(); },
   menu() {
     openModal(`<h2>Menu</h2><div class="answers">
+      <button class="gbtn blue" data-a="soundmenu">🔊 Sound</button>
       <button class="gbtn blue" data-a="help">📖 How to play</button>
       ${G && G.phase === 'gov' ? '<button class="gbtn blue" data-a="allies">🤝 My friends</button>' : ''}
       <button class="gbtn orange" data-a="quit">🏠 Save & exit</button>
       <button class="gbtn green" data-a="closemodal">▶ Resume</button></div>`);
+  },
+  mute() {
+    const m = Sound.toggleMute();
+    document.querySelectorAll('[data-a=mute]').forEach(b => { b.textContent = m ? '🔇' : '🔊'; });
+    toast(m ? '🔇 Sound off' : '🔊 Sound on');
+  },
+  soundmenu() {
+    const s = Sound.settings, pct = v => Math.round(v * 100);
+    openModal(`<h2>🔊 Sound</h2>
+      <label class="vol" for="vol-sfx"><span>🎵 Game sounds</span><input id="vol-sfx" type="range" min="0" max="100" value="${pct(s.sfx)}"></label>
+      <label class="vol" for="vol-music"><span>🎶 Music</span><input id="vol-music" type="range" min="0" max="100" value="${pct(s.music)}"></label>
+      <button class="gbtn ${s.muted ? 'green' : 'orange'}" data-a="mute">${s.muted ? '🔊 Turn sound on' : '🔇 Turn all sound off'}</button>
+      <button class="gbtn green" data-a="closemodal">OK</button>`);
   },
   quit() { save(); UI.screen = 'title'; G = null; render(); },
 };
@@ -484,8 +515,17 @@ function welcomePM() {
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]');
   if (!el || el.disabled) return;
+  Sound.unlock();
+  if (el.dataset.a !== 'mute') Sound.play('tap');
   if ($('#popup')) { if (!el.closest('#popup')) return; closeModal(); }
   ACTIONS[el.dataset.a] && ACTIONS[el.dataset.a](el.dataset);
 });
+
+// Volume sliders change the sound as you drag; play a sample so the level is easy to judge.
+document.addEventListener('input', e => {
+  if (e.target.id === 'vol-sfx') { Sound.set('sfx', e.target.value / 100); Sound.play('tap'); }
+  if (e.target.id === 'vol-music') Sound.set('music', e.target.value / 100);
+});
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
 
 render();
