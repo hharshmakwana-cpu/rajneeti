@@ -1,0 +1,2117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ff9a3c">
+<meta name="description" content="Rajneeti: an offline Indian political strategy game. Win the Lok Sabha and govern as Prime Minister.">
+<title>Rajneeti: Path to Power</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root {
+  --ink: #1d2142;
+  --muted: #6b7194;
+  --card: #ffffff;
+  --green: #22c55e; --green-d: #15803d;
+  --blue: #3b82f6; --blue-d: #1d4ed8;
+  --orange: #f59e0b; --orange-d: #b45309;
+  --red: #ef4444; --red-d: #b91c1c;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: #2a1650; font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+body { display: flex; justify-content: center; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#app { position: relative; width: 100%; max-width: 480px; height: 100dvh; overflow: hidden;
+  background: linear-gradient(170deg, #ff9a3c 0%, #ff5f8a 45%, #7b4dff 100%); }
+#app::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .12;
+  background: radial-gradient(circle at 20% 15%, #fff 0 2px, transparent 3px) 0 0 / 46px 46px, radial-gradient(circle at 70% 60%, #fff 0 1.5px, transparent 2.5px) 0 0 / 38px 38px; }
+button { font: inherit; color: inherit; cursor: pointer; border: none; touch-action: manipulation; }
+button:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.6); }
+input { user-select: text; -webkit-user-select: text; font: inherit; }
+h1, h2 { margin: .15em 0; line-height: 1.15; }
+p { margin: .3em 0; }
+.white { color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .15); }
+.small { font-size: 14px; }
+.tiny { font-size: 12px; color: rgba(255, 255, 255, .85); text-align: center; }
+.center { text-align: center; }
+.spacer { flex: 1; }
+
+.screen { position: relative; height: 100%; display: flex; flex-direction: column; padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom)); }
+
+/* chunky game buttons */
+.gbtn { display: block; width: 100%; padding: 14px 16px; border-radius: 18px; font-size: 17px; font-weight: 900; color: #fff; letter-spacing: .02em; background: var(--blue); box-shadow: 0 6px 0 var(--blue-d); margin-bottom: 6px; transition: transform .08s, box-shadow .08s; text-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
+.gbtn:not(:disabled):active { transform: translateY(5px); box-shadow: 0 1px 0 var(--blue-d); }
+.gbtn small { font-size: 13px; opacity: .9; }
+.gbtn.green { background: var(--green); box-shadow: 0 6px 0 var(--green-d); }
+.gbtn.green:not(:disabled):active { box-shadow: 0 1px 0 var(--green-d); }
+.gbtn.orange { background: var(--orange); box-shadow: 0 6px 0 var(--orange-d); }
+.gbtn.orange:not(:disabled):active { box-shadow: 0 1px 0 var(--orange-d); }
+.gbtn.red { background: var(--red); box-shadow: 0 6px 0 var(--red-d); }
+.gbtn.red:not(:disabled):active { box-shadow: 0 1px 0 var(--red-d); }
+.gbtn.ghost { background: rgba(255, 255, 255, .2); box-shadow: none; }
+.gbtn.big { font-size: 21px; padding: 17px; border-radius: 22px; }
+.gbtn.small { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 12px; margin: 0; }
+
+/* title */
+.title { align-items: center; text-align: center; padding-top: calc(40px + env(safe-area-inset-top)); }
+.logo-art { font-size: 96px; animation: bob 2.6s ease-in-out infinite; filter: drop-shadow(0 10px 0 rgba(0, 0, 0, .15)); }
+@keyframes bob { 50% { transform: translateY(-10px) rotate(-3deg); } }
+.logo { font-size: 56px; font-weight: 900; color: #fff; letter-spacing: .06em; margin: 0; text-shadow: 0 5px 0 #c2410c, 0 10px 18px rgba(0, 0, 0, .25); }
+.sub { color: #fff; font-size: 20px; font-weight: 800; margin-top: 6px; }
+.bigin { width: 100%; margin: 14px 0; padding: 16px; border-radius: 18px; border: 4px solid #fff; background: rgba(255, 255, 255, .95); font-size: 22px; font-weight: 800; text-align: center; color: var(--ink); outline: none; }
+.symbols { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px; }
+.symb { width: 72px; height: 72px; border-radius: 22px; font-size: 38px; box-shadow: 0 6px 0 rgba(0, 0, 0, .25); border: 4px solid transparent; }
+.symb.on { border-color: #fff; transform: scale(1.1); }
+
+/* top bar */
+.top { display: flex; gap: 8px; align-items: center; padding: 10px 0 8px; }
+.chip { background: rgba(0, 0, 0, .22); color: #fff; font-weight: 900; padding: 8px 14px; border-radius: 999px; font-size: 15px; white-space: nowrap; }
+.menu { margin-left: auto; width: 44px; height: 44px; border-radius: 14px; background: rgba(0, 0, 0, .22); color: #fff; font-size: 20px; font-weight: 900; flex: none; }
+
+/* tug of war seat bar */
+.tug { background: rgba(255, 255, 255, .95); border-radius: 22px; padding: 10px 14px 14px; box-shadow: 0 6px 0 rgba(0, 0, 0, .15); }
+.tugtop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.who { display: flex; align-items: center; gap: 8px; }
+.who b { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.av { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 20px; }
+.need { font-size: 12px; font-weight: 800; color: var(--muted); text-align: center; }
+.tugbar { position: relative; height: 18px; border-radius: 9px; background: #e7e8f2; overflow: visible; }
+.tugbar i { position: absolute; top: 0; bottom: 0; transition: width .5s cubic-bezier(.2, .9, .3, 1.2); }
+.tugbar .me { left: 0; border-radius: 9px 0 0 9px; }
+.tugbar .them { right: 0; border-radius: 0 9px 9px 0; }
+.crown { position: absolute; left: calc(272 / 543 * 100%); top: -16px; transform: translateX(-50%); font-size: 18px; }
+.crown::after { content: ""; position: absolute; left: 50%; top: 18px; width: 3px; height: 20px; background: var(--ink); transform: translateX(-50%); border-radius: 2px; }
+
+/* stage */
+.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; padding: 10px 0 0; }
+.prompt { color: #fff; font-weight: 900; font-size: 20px; text-align: center; text-shadow: 0 2px 0 rgba(0, 0, 0, .15); }
+.dots { letter-spacing: 2px; margin-left: 6px; }
+.mcards { display: flex; flex-direction: column; gap: 12px; }
+.mcard { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 22px; padding: 14px; text-align: left; box-shadow: 0 7px 0 rgba(0, 0, 0, .18); animation: deal .35s cubic-bezier(.2, .9, .3, 1.3) both; transition: transform .08s, box-shadow .08s; }
+.mcard:not(:disabled):active { transform: translateY(5px) scale(.98); box-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+@keyframes deal { from { opacity: 0; transform: translateY(30px) scale(.9); } }
+.mi { font-size: 40px; width: 56px; height: 56px; display: grid; place-items: center; background: #f3f0ff; border-radius: 16px; flex: none; }
+.mt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mt b { font-size: 17px; font-weight: 900; }
+.mt small { color: var(--muted); font-weight: 700; }
+.badge { background: #fff4d6; color: #9a5b00; font-weight: 900; border-radius: 12px; padding: 6px 10px; font-size: 15px; flex: none; }
+.fans { display: flex; gap: 10px; font-size: 18px; flex-wrap: wrap; justify-content: inherit; }
+.like, .dislike { background: #f1fbf4; border-radius: 10px; padding: 2px 8px; }
+.dislike { background: #fff1f1; }
+
+/* big card */
+.bigcard { position: relative; background: var(--card); border-radius: 28px; padding: 22px 18px; text-align: center; box-shadow: 0 8px 0 rgba(0, 0, 0, .18); animation: pop .35s cubic-bezier(.2, .9, .3, 1.3); max-height: 100%; overflow-y: auto; }
+.bigcard p { color: var(--muted); font-weight: 600; font-size: 15px; }
+.bigcard h2 { font-weight: 900; font-size: 23px; }
+.bigcard .fans { justify-content: center; margin-top: 10px; }
+.bigcard.news { border: 4px solid #ffd166; }
+.bigcard.swipe { touch-action: none; cursor: grab; }
+@keyframes pop { from { opacity: 0; transform: scale(.85) rotate(-2deg); } }
+.emo { font-size: 76px; line-height: 1.1; }
+.promised { display: inline-block; background: #fff4d6; color: #9a5b00; border-radius: 999px; padding: 4px 12px; font-weight: 900; font-size: 14px; margin-top: 6px; }
+.warnline { color: var(--red-d); font-weight: 800; font-size: 14px; margin-top: 8px; }
+.costtag { position: absolute; top: 14px; right: 14px; background: #fff4d6; color: #9a5b00; font-weight: 900; padding: 5px 10px; border-radius: 12px; }
+.costtag.poor { background: #fee2e2; color: var(--red-d); }
+.stamp { position: absolute; top: 18px; padding: 4px 12px; border: 4px solid; border-radius: 10px; font-weight: 900; font-size: 26px; opacity: 0; pointer-events: none; }
+.stamp.yes { left: 16px; color: var(--green); transform: rotate(-14deg); }
+.stamp.no { right: 16px; color: var(--red); transform: rotate(14deg); }
+.answers { display: flex; flex-direction: column; gap: 4px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.yesno { display: flex; align-items: center; justify-content: space-between; padding: 4px 20px; }
+.round { width: 78px; height: 78px; border-radius: 50%; font-size: 34px; font-weight: 900; color: #fff; }
+.round.red { background: var(--red); box-shadow: 0 6px 0 var(--red-d); }
+.round.green { background: var(--green); box-shadow: 0 6px 0 var(--green-d); }
+.round:not(:disabled):active { transform: translateY(5px); box-shadow: none; }
+.bottom { padding-top: 10px; }
+
+/* meters (PM) */
+.meters { display: flex; justify-content: space-around; background: rgba(0, 0, 0, .18); border-radius: 22px; padding: 10px; cursor: pointer; }
+.mfill { position: relative; width: 56px; height: 56px; border-radius: 18px; background: rgba(255, 255, 255, .25); overflow: hidden; display: grid; place-items: center; }
+.mfill i { position: absolute; left: 0; right: 0; bottom: 0; transition: height .6s cubic-bezier(.2, .9, .3, 1.2); }
+.mfill span { position: relative; font-size: 28px; }
+
+/* results */
+.bignums { display: flex; align-items: center; justify-content: space-around; }
+.bignums b { display: block; font-size: 52px; font-weight: 900; line-height: 1; text-shadow: 0 4px 0 rgba(0, 0, 0, .12); background: #fff; border-radius: 24px; padding: 10px 14px; font-variant-numeric: tabular-nums; min-width: 120px; text-align: center; }
+.bignums small { display: block; text-align: center; color: #fff; font-weight: 900; margin-top: 6px; }
+.vsx { color: #fff; font-weight: 900; font-size: 22px; }
+.verdict { text-align: center; color: #fff; font-size: 34px; font-weight: 900; text-shadow: 0 4px 0 rgba(0, 0, 0, .2); animation: pop .5s cubic-bezier(.2, .9, .3, 1.5); }
+.score { font-size: 30px; font-weight: 900; color: #9a5b00; }
+
+/* modal */
+.modal-bg { position: absolute; inset: 0; z-index: 50; background: rgba(20, 10, 40, .6); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fade .2s; }
+.modal { background: #fff; border-radius: 28px; padding: 22px 18px; width: 100%; max-height: 90%; overflow-y: auto; box-shadow: 0 10px 0 rgba(0, 0, 0, .2); animation: pop .3s cubic-bezier(.2, .9, .3, 1.3); }
+.modal h2 { text-align: center; font-weight: 900; }
+@keyframes fade { from { opacity: 0; } }
+.howto { display: flex; flex-direction: column; gap: 12px; margin: 12px 0 18px; }
+.howto > div { display: flex; gap: 14px; align-items: center; font-weight: 700; font-size: 16px; }
+.howto span { font-size: 34px; }
+.howto p { margin: 0; }
+.srow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 2px solid #f1f1f7; font-weight: 700; }
+.faces { display: flex; justify-content: space-around; text-align: center; font-weight: 800; font-size: 14px; margin: 12px 0; }
+.faces span { font-size: 13px; }
+
+.toast { position: absolute; left: 50%; top: 23%; transform: translate(-50%, 10px) scale(.95); background: #fff; color: var(--ink); padding: 12px 18px; border-radius: 18px; opacity: 0; pointer-events: none; transition: all .25s; z-index: 60; width: max-content; max-width: 86%; text-align: center; font-size: 15px; font-weight: 800; box-shadow: 0 6px 0 rgba(0, 0, 0, .2); }
+.toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.toast.bad { box-shadow: 0 6px 0 var(--red); }
+.toast.good { box-shadow: 0 6px 0 var(--green); }
+
+@media (max-height: 680px) { .emo { font-size: 56px; } .mi { font-size: 30px; width: 46px; height: 46px; } .mcard { padding: 10px; } .bignums b { font-size: 54px; min-width: 100px; } }
+.meter { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.meter small { color: #fff; font-weight: 900; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+// RAJNEETI — static game data. All parties and people are fictional.
+
+const BLOCS = [
+  { id: 'farmers',  name: 'Farmers',      icon: '🌾', nat: 0.24 },
+  { id: 'poor',     name: 'Poor families',   icon: '🛖', nat: 0.22 },
+  { id: 'workers',  name: 'Workers',      icon: '🏭', nat: 0.14 },
+  { id: 'middle',   name: 'City families', icon: '🏠', nat: 0.18 },
+  { id: 'youth',    name: 'Young people',        icon: '🎓', nat: 0.14 },
+  { id: 'business', name: 'Business people',     icon: '💼', nat: 0.08 },
+];
+
+// base: starting strength [you, RSP, NBM, regional]. pos: [col,row] on tile map.
+// reg: regional party (null = scattered independents, cannot ally).
+// lean: regional party's starting affinity toward you (0..1). dislikes: reform tags it opposes.
+const STATES = [
+  { id: 'JK', name: 'Jammu & Kashmir',  seats: 6,  urban: .27, pos: [2, 0], base: [24, 34, 4, 38], reg: { name: 'Kashmir National Front', short: 'KNF', lean: .6, dislikes: ['centralise'] } },
+  { id: 'PB', name: 'Punjab',           seats: 13, urban: .37, pos: [1, 1], base: [34, 16, 22, 28], reg: { name: 'Panth Kisan Dal', short: 'PKD', lean: .45, dislikes: ['farm', 'land'] } },
+  { id: 'HP', name: 'Himachal Pradesh', seats: 4,  urban: .10, pos: [2, 1], base: [44, 48, 4, 4], reg: null },
+  { id: 'UK', name: 'Uttarakhand',      seats: 5,  urban: .30, pos: [3, 1], base: [38, 52, 4, 6], reg: null },
+  { id: 'RJ', name: 'Rajasthan',        seats: 25, urban: .25, pos: [0, 2], base: [40, 46, 4, 10], reg: null },
+  { id: 'HR', name: 'Haryana',          seats: 10, urban: .35, pos: [1, 2], base: [36, 42, 6, 16], reg: { name: 'Haryana Lok Dal', short: 'HLD', lean: .4, dislikes: ['farm', 'land'] } },
+  { id: 'DL', name: 'Delhi',            seats: 7,  urban: .98, pos: [2, 2], base: [22, 44, 32, 2], reg: null },
+  { id: 'UP', name: 'Uttar Pradesh',    seats: 80, urban: .23, pos: [3, 2], base: [24, 38, 6, 30], reg: { name: 'Awadh Lok Manch', short: 'ALM', lean: .55, dislikes: ['labour', 'anticorruption'] } },
+  { id: 'BR', name: 'Bihar',            seats: 40, urban: .12, pos: [4, 2], base: [20, 32, 6, 42], reg: { name: 'Magadh Janata Dal', short: 'MJD', lean: .35, dislikes: ['anticorruption', 'centralise'] } },
+  { id: 'AS', name: 'Assam',            seats: 14, urban: .14, pos: [6, 2], base: [30, 42, 4, 24], reg: { name: 'Asom Jatiya Parishad', short: 'AJP', lean: .4, dislikes: ['centralise'] } },
+  { id: 'NE', name: 'North-East (6 states)', seats: 11, urban: .25, pos: [7, 2], base: [26, 36, 4, 34], reg: { name: "North-East People's Alliance", short: 'NEPA', lean: .45, dislikes: ['land', 'centralise'] } },
+  { id: 'GJ', name: 'Gujarat',          seats: 26, urban: .43, pos: [0, 3], base: [30, 58, 4, 8], reg: null },
+  { id: 'MP', name: 'Madhya Pradesh',   seats: 29, urban: .28, pos: [1, 3], base: [38, 48, 4, 10], reg: null },
+  { id: 'CG', name: 'Chhattisgarh',     seats: 11, urban: .23, pos: [2, 3], base: [40, 46, 4, 10], reg: null },
+  { id: 'JH', name: 'Jharkhand',        seats: 14, urban: .24, pos: [3, 3], base: [24, 36, 4, 36], reg: { name: 'Jharkhand Adivasi Morcha', short: 'JAM', lean: .6, dislikes: ['land', 'market'] } },
+  { id: 'WB', name: 'West Bengal',      seats: 42, urban: .32, pos: [4, 3], base: [12, 30, 8, 50], reg: { name: 'Bangla Matri Sangha', short: 'BMS', lean: .5, dislikes: ['labour', 'market', 'centralise'] } },
+  { id: 'MH', name: 'Maharashtra',      seats: 48, urban: .45, pos: [0, 4], base: [28, 36, 8, 28], reg: { name: 'Maratha Swabhiman Sena', short: 'MSS', lean: .4, dislikes: ['farm'] } },
+  { id: 'TG', name: 'Telangana',        seats: 17, urban: .39, pos: [1, 4], base: [32, 24, 4, 40], reg: { name: 'Telangana Praja Samithi', short: 'TPS', lean: .45, dislikes: ['centralise'] } },
+  { id: 'OD', name: 'Odisha',           seats: 21, urban: .17, pos: [2, 4], base: [18, 32, 4, 46], reg: { name: 'Utkal Jana Dal', short: 'UJD', lean: .4, dislikes: ['land'] } },
+  { id: 'GA', name: 'Goa',              seats: 2,  urban: .62, pos: [0, 5], base: [36, 46, 10, 8], reg: null },
+  { id: 'KA', name: 'Karnataka',        seats: 28, urban: .39, pos: [1, 5], base: [38, 40, 4, 18], reg: { name: 'Kannada Raitha Paksha', short: 'KRP', lean: .45, dislikes: ['farm'] } },
+  { id: 'AP', name: 'Andhra Pradesh',   seats: 25, urban: .30, pos: [2, 5], base: [14, 14, 4, 68], reg: { name: 'Andhra Praja Vedika', short: 'APV', lean: .3, dislikes: ['fiscal'] } },
+  { id: 'UT', name: 'Other UTs',        seats: 6,  urban: .60, pos: [4, 5], base: [36, 40, 6, 18], reg: null },
+  { id: 'KL', name: 'Kerala',           seats: 20, urban: .48, pos: [1, 6], base: [40, 14, 6, 40], reg: { name: 'Kerala Left Front', short: 'KLF', lean: .35, dislikes: ['market', 'labour', 'land'] } },
+  { id: 'TN', name: 'Tamil Nadu',       seats: 39, urban: .48, pos: [2, 6], base: [16, 12, 4, 68], reg: { name: 'Tamizh Makkal Kazhagam', short: 'TMK', lean: .7, dislikes: ['centralise'] } },
+];
+
+const RIVALS = {
+  A: { name: 'Rashtriya Samruddhi Party', short: 'RSP', color: '#d64541', leader: 'PM Devendra Rathore' },
+  B: { name: 'Naya Bharat Morcha',        short: 'NBM', color: '#3b82f6', leader: 'Kavya Iyer' },
+};
+
+const PARTY_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899'];
+const PARTY_SYMBOLS = ['🦚', '☀️', '🌳', '🪔', '🦁', '⭐'];
+
+const IDEOLOGIES = {
+  welfare:  { name: 'Social Welfare', desc: 'Champion of farmers, the poor and workers.', appeal: { farmers: 8, poor: 10, workers: 8, middle: -2, youth: 0, business: -8 } },
+  centrist: { name: 'Big-Tent Centrist', desc: 'A little something for everyone.', appeal: { farmers: 4, poor: 4, workers: 3, middle: 3, youth: 3, business: 0 } },
+  reform:   { name: 'Pro-Growth Reformer', desc: 'Jobs, markets and aspiration.', appeal: { farmers: -2, poor: 0, workers: 0, middle: 8, youth: 8, business: 10 } },
+};
+
+const RIVAL_APPEAL = {
+  A: { farmers: -2, poor: 3, workers: -2, middle: 8, youth: 2, business: 10 },
+  B: { farmers: 0, poor: 2, workers: 2, middle: 5, youth: 9, business: 0 },
+};
+
+const DIFFICULTY = {
+  easy:   { name: 'Easy',   baseBonus: 4,  funds: 300, rivalAI: 0.7 },
+  normal: { name: 'Normal', baseBonus: 0,  funds: 220, rivalAI: 1.0 },
+  hard:   { name: 'Hard',   baseBonus: -3, funds: 160, rivalAI: 1.3 },
+};
+
+// Manifesto promises. check(G) decides at the end of a term whether the promise was kept.
+const PROMISES = [
+  { id: 'loanwaiver', name: 'Forgive farmer loans', blocs: { farmers: 9, poor: 2, business: -3 }, keep: 'Pass the Farm Loan Waiver.', check: G => G.gov.passed.includes('loanwaiver') },
+  { id: 'msp',        name: 'Fair crop prices', blocs: { farmers: 10, business: -3, middle: -1 }, keep: 'Pass the MSP Guarantee Act.', check: G => G.gov.passed.includes('msp') },
+  { id: 'taxcut',     name: 'Lower taxes', blocs: { middle: 9, youth: 2 }, keep: 'Top income-tax rate at 27% or lower.', check: G => G.eco.b.itr <= 27 },
+  { id: 'jobs',       name: 'Lots of new jobs', blocs: { youth: 9, workers: 4 }, keep: 'Unemployment below 6% at term end.', check: G => G.eco.unemp < 6 },
+  { id: 'ops',        name: 'Big pensions', blocs: { middle: 5, workers: 4, business: -2 }, keep: 'Restore the Old Pension Scheme.', check: G => G.gov.passed.includes('ops') },
+  { id: 'cash',       name: 'Money for mothers', blocs: { poor: 10, middle: 1 }, keep: 'Pass the Mahila Samman cash transfer.', check: G => G.gov.passed.includes('cash') },
+  { id: 'health',     name: 'Free hospitals', blocs: { poor: 6, middle: 4 }, keep: 'Pass Universal Health Insurance.', check: G => G.gov.passed.includes('health') },
+  { id: 'corptax',    name: 'Help big companies', blocs: { business: 10, workers: -2, poor: -2 }, keep: 'Corporate tax at 22% or lower.', check: G => G.eco.b.ctr <= 22 },
+  { id: 'prices',     name: 'Keep prices low', blocs: { middle: 4, poor: 4, workers: 2 }, keep: 'Average inflation under 5% this term.', check: G => avg(G.hist.infl.slice(-20)) < 5 },
+  { id: 'infra',      name: 'Great roads', blocs: { business: 4, middle: 3, youth: 2 }, keep: 'Infrastructure spending ≥ 3.6% of GDP.', check: G => G.eco.b.infra >= 3.6 },
+  { id: 'lokpal',     name: 'Catch cheaters', blocs: { middle: 3, youth: 3, poor: 1 }, trust: 6, keep: 'Pass the Lokpal Strengthening Act.', check: G => G.gov.passed.includes('lokpal') },
+  { id: 'skills',     name: 'Teach every kid a skill', blocs: { youth: 6, workers: 2 }, keep: 'Pass the National Skills Mission.', check: G => G.gov.passed.includes('skills') },
+];
+
+// Reforms/bills available as PM.
+// pc: political capital. money: money bill (skips Rajya Sabha). tags: what allies may dislike.
+// boost: potential growth added over 4 quarters. spend: ongoing %GDP. oneTime: %GDP spread over 4 qtrs.
+// rev: ongoing revenue %GDP; revOnce: one-off revenue spread over 4 qtrs. unemp: unemployment target shift.
+const REFORMS = [
+  { id: 'gst',        name: 'Simple Shop Tax', pc: 3, tags: ['centralise'], blocs: { business: 6, middle: 3 }, boost: .3, rev: -.15, desc: 'Make shop taxes easy and simple.' },
+  { id: 'labour',     name: 'Easy Factory Rules', pc: 4, tags: ['labour'], blocs: { business: 9, workers: -11, youth: 2 }, boost: .3, unemp: -.5, risk: 'strike', desc: 'Factories can hire people easily. Workers may not like it.' },
+  { id: 'farmmkt',    name: 'Farmers Sell Anywhere', pc: 4, tags: ['farm', 'market'], blocs: { business: 6, farmers: -12 }, boost: .25, risk: 'farmprotest', desc: 'Farmers can sell crops to anyone. Some farmers get scared.' },
+  { id: 'msp',        name: 'Fair Crop Prices', pc: 3, tags: ['fiscal'], blocs: { farmers: 14, business: -5, middle: -1 }, spend: .4, infl: .3, desc: 'Promise farmers a fair price for their crops. Costs a lot.' },
+  { id: 'loanwaiver', name: 'Forgive Farmer Loans', pc: 2, money: true, tags: ['fiscal'], blocs: { farmers: 12, business: -3, middle: -1 }, oneTime: 1.4, desc: 'Farmers do not have to pay back loans. Very costly!' },
+  { id: 'pli',        name: 'Make Phones in India', pc: 2, money: true, tags: [], blocs: { business: 6, workers: 4, youth: 3 }, spend: .2, boost: .3, unemp: -.4, desc: 'Help factories make phones and cars here. More jobs!' },
+  { id: 'disinvest',  name: 'Sell Govt Companies', pc: 3, tags: ['market'], blocs: { business: 6, workers: -6 }, boost: .15, revOnce: .8, desc: 'Sell some government companies to get money.' },
+  { id: 'bankrecap',  name: 'Fix the Banks', pc: 2, money: true, tags: [], blocs: { business: 4, middle: 1 }, oneTime: .6, boost: .2, flag: 'banksSafe', desc: 'Make banks strong so they do not break.' },
+  { id: 'health',     name: 'Free Hospital Care', pc: 3, tags: [], blocs: { poor: 10, middle: 4 }, spend: .5, human: .4, desc: 'Free doctors and hospitals for every family.' },
+  { id: 'cash',       name: 'Money for Mothers', pc: 2, money: true, tags: ['fiscal'], blocs: { poor: 12, middle: -1, farmers: 2 }, spend: .9, desc: 'Give money every month to poor mothers.' },
+  { id: 'ops',        name: 'Big Pensions', pc: 2, money: true, tags: ['fiscal'], blocs: { middle: 6, workers: 4, business: -4 }, spend: .35, desc: 'Big pensions for old government workers. Costs more every year.' },
+  { id: 'itsimple',   name: 'Easy Tax Forms', pc: 2, money: true, tags: [], blocs: { middle: 4, business: 3 }, boost: .1, rev: .1, desc: 'Make tax forms short and easy.' },
+  { id: 'green',      name: 'Solar Power', pc: 2, money: true, tags: [], blocs: { youth: 5, business: 2 }, spend: .3, boost: .1, flag: 'green', desc: 'Solar panels everywhere! We need less oil.' },
+  { id: 'dpi',        name: 'Pay with Phones', pc: 2, tags: [], blocs: { youth: 4, business: 3, poor: 2 }, boost: .2, flag: 'dpi', desc: 'Help everyone pay and get help using phones.' },
+  { id: 'lokpal',     name: 'Catch Cheaters Law', pc: 3, tags: ['anticorruption'], blocs: { middle: 4, youth: 4, poor: 2 }, trust: 10, flag: 'lokpal', desc: 'A strong team to catch leaders who cheat. Some friends get nervous.' },
+  { id: 'land',       name: 'Land for Factories', pc: 4, tags: ['land'], blocs: { business: 7, farmers: -9, poor: -2 }, boost: .25, risk: 'farmprotest', desc: 'Make it easy to get land for factories. Farmers may be upset.' },
+  { id: 'urbanjobs',  name: 'Jobs in Cities', pc: 3, money: true, tags: ['fiscal'], blocs: { workers: 8, poor: 4, youth: 3 }, spend: .4, unemp: -.6, desc: 'Promise work to everyone in cities.' },
+  { id: 'skills',     name: 'Learn a Skill', pc: 2, money: true, tags: [], blocs: { youth: 6, workers: 2 }, spend: .25, human: .25, unemp: -.3, desc: 'Training in every town so young people get good jobs.' },
+  { id: 'demo',       name: 'Ban Big Notes', pc: 3, money: true, tags: [], blocs: { middle: -6, poor: -8, business: -7, farmers: -4 }, rev: .3, shock: -2.5, trust: -2, desc: 'Cancel big money notes overnight. Very risky!' },
+  { id: 'onoe',       name: 'One Election Day', pc: 5, tags: ['centralise'], blocs: { middle: 2, business: 2 }, trust: -2, flag: 'onoe', desc: 'Hold all elections on the same day.' },
+];
+
+const BUDGET_LIMITS = {
+  itr:       { name: 'Top income tax',     unit: '%', min: 15, max: 42, step: 1 },
+  ctr:       { name: 'Corporate tax',      unit: '%', min: 15, max: 35, step: 1 },
+  gst:       { name: 'Average GST',        unit: '%', min: 10, max: 28, step: 1 },
+  infra:     { name: 'Infrastructure',     unit: '% GDP', min: 1.5, max: 5.5, step: .1 },
+  defence:   { name: 'Defence',            unit: '% GDP', min: 1.2, max: 3.0, step: .1 },
+  health:    { name: 'Health',             unit: '% GDP', min: 0.2, max: 2.0, step: .1 },
+  education: { name: 'Education',          unit: '% GDP', min: 0.3, max: 2.0, step: .1 },
+  welfare:   { name: 'Welfare & Subsidies', unit: '% GDP', min: 0.5, max: 3.5, step: .1 },
+  agri:      { name: 'Agriculture',        unit: '% GDP', min: 0.3, max: 2.0, step: .1 },
+};
+
+const RATINGS = ['BB+ (Junk)', 'BBB-', 'BBB', 'BBB+', 'A-'];
+
+function avg(a) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0; }
+</script>
+<script>
+// RAJNEETI — event cards, written so a young child can follow them.
+// Each choice's run() changes G and returns a short message.
+
+const COASTAL = ['OD', 'AP', 'TN', 'WB', 'GJ', 'KL', 'MH'];
+const bigState = () => pick(STATES.filter(s => s.seats >= 14));
+const tr = x => { G.trust = clamp(G.trust + x, 0, 100); };
+const mom = x => { G.camp.momentum += x; };
+const ground = (id, x) => { G.camp.ground[id] = Math.max(-10, G.camp.ground[id] + x); };
+const appeal = (b, x) => { G.appeal.you[b] += x; };
+
+const CAMPAIGN_EVENTS = [
+  { id: 'gaffe', icon: '🎥', title: 'Fake Video!',
+    text: () => 'Someone cut your speech to make you look bad. It is spreading on phones.',
+    choices: () => [
+      { label: '📢 Show the real video', cost: 5, run: () => { mom(-.5); tr(2); return 'People saw the truth. 👍'; } },
+      { label: '😤 Fight back hard', run: () => rand() < .5 ? (mom(2), 'It worked! People cheer for you. 🎉') : (mom(-3), appeal('farmers', -2), 'Oops! The fight made it worse. 😬') },
+      { label: '🙈 Ignore it', run: () => { mom(-2); return 'It slowly goes away, but it hurt a bit.'; } },
+    ] },
+  { id: 'defector', icon: '🚶', title: 'A Leader Wants to Leave',
+    ctx: () => ({ s: bigState().id }),
+    text: (G, c) => `A popular leader from ${stateById(c.s).name} wants to join the RSP.`,
+    choices: (G, c) => [
+      { label: '🎁 Give him a big job to stay', cost: 10, run: () => { tr(-2); return 'He stays with you.'; } },
+      { label: '👋 Let him go', run: () => { ground(c.s, -4); return `He left. You lost some fans in ${stateById(c.s).name}.`; } },
+    ] },
+  { id: 'celebrity', icon: '🌟', title: 'Movie Star Wants to Help!',
+    text: () => 'A famous film star wants to join your team.',
+    choices: () => [
+      { label: '🤩 Yes, welcome!', cost: 5, run: () => { appeal('youth', 3); mom(2); return 'Huge crowds come to see her! 🎉'; } },
+      { label: '🙂 No, thank you', run: () => { tr(1); return 'You keep things serious.'; } },
+    ] },
+  { id: 'rivalscam', icon: '📰', title: 'RSP Caught Cheating!',
+    text: () => 'News says an RSP minister gave a big deal to his friend.',
+    choices: () => [
+      { label: '📣 Tell everyone!', cost: 8, run: () => { G.camp.momA -= 3; return 'Everyone is talking about it. RSP looks bad!'; } },
+      { label: '🙂 Ask for a fair check', run: () => { tr(3); G.camp.momA -= 1; return 'People like that you stay calm.'; } },
+    ] },
+  { id: 'farmmarch', icon: '🚜', title: 'Farmers Are Marching',
+    text: () => 'Thousands of farmers walk to Delhi. They want better prices for crops.',
+    choices: () => [
+      { label: '🚶 Walk with them', run: () => { appeal('farmers', 4); appeal('business', -2); return 'Farmers love you! 🌾'; } },
+      { label: '🤝 Meet their leaders', run: () => { appeal('farmers', 2); return 'Farmers are happy you listened.'; } },
+      { label: '🙈 Stay away', run: () => { appeal('farmers', -2); appeal('business', 1); return 'Farmers feel ignored. 😕'; } },
+    ] },
+  { id: 'violence', icon: '🔥', title: 'Fighting in a Town',
+    ctx: () => ({ s: bigState().id }),
+    text: (G, c) => `People are fighting in ${stateById(c.s).name}. Everyone is scared.`,
+    choices: (G, c) => [
+      { label: '🕊️ Go and ask for peace', cost: 5, run: () => { tr(4); ground(c.s, 2); return 'Your peace walk calms everyone. 🕊️'; } },
+      { label: '👉 Blame the state leaders', run: () => { mom(1); tr(-3); return 'Some people think that was mean.'; } },
+      { label: '🤐 Say nothing', run: () => { tr(-2); return 'People noticed you were quiet.'; } },
+    ] },
+  { id: 'ecnotice', icon: '⚖️', title: 'Referee Warning!',
+    text: () => 'The Election Commission (the referee) says you broke a rule in your speech.',
+    choices: () => [
+      { label: '🙏 Say sorry', run: () => { tr(2); mom(-1); return 'Saying sorry was the right thing.'; } },
+      { label: '😠 Argue with the referee', run: () => { mom(1); tr(-4); return 'Your fans liked it. Others did not.'; } },
+    ] },
+  { id: 'donor', icon: '💼', title: 'A Rich Man Offers Money',
+    text: () => 'A rich man offers ₹100 crore. But he wants a favour later…',
+    choices: () => [
+      { label: '💰 Take the money', run: () => { G.camp.funds += 100; tr(-3); G.camp.donorRisk += 2; return 'You got ₹100 crore. Hope it is okay… 🤔'; } },
+      { label: '✋ Say no', run: () => { tr(3); return 'People trust you more! 👍'; } },
+    ] },
+  { id: 'debate', icon: '🎙️', title: 'TV Debate Challenge',
+    text: () => 'The RSP leader wants to debate you on live TV.',
+    choices: () => [
+      { label: '💪 Accept!', run: () => rand() < .3 + G.trust / 150 ? (mom(4), tr(2), 'You won the debate! 🏆') : (mom(-3), 'You got nervous. Bad night. 😓') },
+      { label: '🙅 Say no', run: () => { mom(-1); return 'Some say you were scared.'; } },
+    ] },
+  { id: 'paperleak', icon: '📝', title: 'Exam Paper Leaked',
+    text: () => 'A big exam paper leaked. Students are very upset.',
+    choices: () => [
+      { label: '📜 Promise a strict new rule', run: () => { appeal('youth', 4); return 'Students cheer for you! 🎓'; } },
+      { label: '✊ Stand with students', cost: 6, run: () => { appeal('youth', 3); mom(2); return 'You are on every TV channel!'; } },
+    ] },
+  { id: 'flood', icon: '🌊', title: 'Big Floods!',
+    ctx: () => ({ s: pick(['AS', 'BR', 'KL', 'MH', 'OD', 'WB']) }),
+    text: (G, c) => `Floods in ${stateById(c.s).name}. Many people lost their homes.`,
+    choices: (G, c) => [
+      { label: '🛶 Go and help them', cost: 15, run: () => { tr(3); ground(c.s, 5); return 'You helped first. People will remember! ❤️'; } },
+      { label: '📦 Send food packets', cost: 4, run: () => { ground(c.s, 1); return 'Food reached the families.'; } },
+    ] },
+  { id: 'ticketsale', icon: '🎫', title: 'Cheating in Your Team',
+    text: () => 'Some of your team members were caught taking money.',
+    choices: () => [
+      { label: '🚪 Kick them out', run: () => { tr(3); G.camp.cadre = Math.max(10, G.camp.cadre - 8); return 'Good job! You kept your team clean.'; } },
+      { label: '🙊 Say it is not true', run: () => { tr(-5); return 'Not many people believe you. 😬'; } },
+    ] },
+  { id: 'trend', icon: '📈', title: 'You Are Famous Online!',
+    text: () => 'Your speech went viral. Everyone is sharing it!',
+    choices: () => [{ label: '🎉 Yay!', run: () => { mom(2); return 'Crores of people saw your speech!'; } }] },
+  { id: 'founders', icon: '🚀', title: 'Young Inventors Want Help',
+    text: () => 'Young people who start new companies ask: will you help us?',
+    choices: () => [
+      { label: '🚀 Yes, let us build!', run: () => { appeal('youth', 3); appeal('business', 2); return 'Young inventors love your plan!'; } },
+      { label: '🌾 Focus on villages', run: () => { appeal('farmers', 1); appeal('youth', -1); return 'You talk about villages instead.'; } },
+    ] },
+  { id: 'donorscandal', icon: '💣', title: 'The Rich Man Wants His Favour',
+    when: G => G.camp.donorRisk >= 2,
+    text: () => 'News says your rich donor got special help. People are angry.',
+    choices: () => [
+      { label: '💸 Give the money back', cost: 40, run: () => { tr(-2); G.camp.donorRisk = 0; return 'You returned the money. Phew.'; } },
+      { label: '😬 Just wait', run: () => { tr(-7); mom(-2); G.camp.donorRisk = 0; return 'The news stayed for a whole week. Ouch.'; } },
+    ] },
+];
+
+const GOV_EVENTS = [
+  { id: 'monsoon', icon: '☀️', title: 'No Rain!', weight: 2,
+    text: () => 'The rains did not come. Crops are drying up and food is getting costly.',
+    choices: () => [
+      { label: '💧 Help the farmers', run: () => { oneTime(.3); mod('farmers', 5); G.eco.food += .8; return 'Farmers got help. 🌾'; } },
+      { label: '🚢 Buy food from other countries', run: () => { G.eco.food += .3; mod('farmers', -6); mod('middle', 2); return 'Food stays cheap, but farmers are sad.'; } },
+      { label: '🤷 Do nothing', run: () => { G.eco.food += 1.6; mod('farmers', -8); mod('poor', -4); return 'Food prices went way up. 😟'; } },
+    ] },
+  { id: 'oil', icon: '🛢️', title: 'Petrol Is Costly!', weight: 1.5,
+    text: () => 'Oil from other countries suddenly costs a lot more.',
+    choices: () => [
+      { label: '⛽ Cut petrol tax', run: () => { revOnce(-.4, 4); G.eco.oil += .6; mod('middle', 2); return 'Petrol stays cheaper. The government earns less.'; } },
+      { label: '💸 Let prices go up', run: () => { G.eco.oil += 1.8; mod('middle', -4); mod('poor', -2); return 'Petrol is costly. People are upset.'; } },
+      { label: '🤝 Buy cheap oil from a far country', run: () => { G.eco.oil += .5; if (rand() < .4) { growthShock(-.4, 2); mod('business', -3); return 'Cheap oil, but some countries got angry with us.'; } return 'Smart deal! Cheap oil for India. 👍'; } },
+    ] },
+  { id: 'globalrec', icon: '🌍', title: 'The World Is Slowing Down', weight: 1,
+    text: () => 'Other countries are buying less from India. Factories are worried.',
+    choices: () => [
+      { label: '💰 Spend to help factories', run: () => { oneTime(1.0); G.eco.global -= .8; mod('business', 3); mod('workers', 2); return 'Factories keep running. 🏭'; } },
+      { label: '🧘 Wait and see', run: () => { G.eco.global -= 1.8; return 'Things slowed down a lot.'; } },
+      { label: '📦 Sell cheaper to the world', run: () => { G.eco.global -= 1.1; G.eco.oil += .6; mod('business', 2); return 'Sales went up, but some prices rose.'; } },
+    ] },
+  { id: 'border', icon: '🏔️', title: 'Trouble at the Border', weight: 1,
+    text: () => 'Soldiers from another country came into our mountains.',
+    choices: () => [
+      { label: '🪖 Send our army', run: () => { oneTime(.25); if (G.eco.b.defence >= 2.0 || rand() < .4) { modAll(4); tr(2); return 'They went back! India is proud of you! 🇮🇳'; } modAll(-3); return 'Our army needed better tools. They did not go back.'; } },
+      { label: '🕊️ Talk to them', run: () => { if (rand() < .6) { tr(2); mod('business', 2); return 'Talking worked! Peace is back. 🕊️'; } mod('middle', -4); mod('youth', -3); return 'Talks are slow. Some say you are weak.'; } },
+      { label: '🚫 Stop buying their things', run: () => { mod('youth', 3); mod('middle', 3); mod('business', -3); inflShock(.3, 2); return 'People like it, but some things cost more now.'; } },
+    ] },
+  { id: 'bankcrisis', icon: '🏦', title: 'A Bank Is Breaking!', weight: 1.2, when: G => !G.gov.flags.banksSafe,
+    text: () => 'A big bank has run out of money. People are scared for their savings.',
+    choices: () => [
+      { label: '🛟 Save people\'s money', run: () => { oneTime(.8); mod('middle', 2); return 'Everyone\'s savings are safe. 😌'; } },
+      { label: '🔗 Join it with a strong bank', pc: 1, run: () => { growthShock(-.4, 2); mod('middle', -2); return 'The banks joined. Things are calmer.'; } },
+      { label: '🤷 Let it break', run: () => { growthShock(-1.2, 2); G.eco.sensex *= .9; mod('middle', -8); mod('business', -5); return 'People lost money. Very sad. 😢'; } },
+    ] },
+  { id: 'scandal', icon: '🕵️', title: 'Minister Caught Cheating!', weight: 1.4,
+    text: () => 'A camera caught one of your ministers taking money.',
+    choices: (G) => [
+      { label: '🚪 Remove him', run: () => { tr(5); if (G.gov.allies.length && rand() < .5) { const a = pick(G.gov.allies); a.sat = clamp(a.sat - 12, 0, 100); return `Good! But he was from ${a.short}, and they are a bit upset.`; } return 'Everyone claps! You are fair. 👏'; } },
+      { label: '🔍 Check first', pc: 2, run: () => { tr(1); return 'A team is checking. People wait.'; } },
+      { label: '🛡️ Protect him', run: () => { tr(-8); modAll(-2); return 'People are angry that you protected a cheater. 😠'; } },
+    ] },
+  { id: 'boom', icon: '🐂', title: 'Share Market Is Booming!', weight: .8,
+    text: () => 'Company shares are going up and up!',
+    choices: () => [
+      { label: '💰 Add a small tax on profits', run: () => { G.eco.b.progRev = (G.eco.b.progRev || 0) + .15; mod('business', -4); mod('middle', -2); return 'More money for the government. Business is grumpy.'; } },
+      { label: '🎉 Celebrate!', run: () => { G.eco.sensex *= 1.04; mod('business', 2); return 'The world sees India growing! 📈'; } },
+    ] },
+  { id: 'pandemic', icon: '🦠', title: 'A New Sickness Is Spreading', weight: .3, when: G => G.gov.q > 2,
+    text: () => 'A new germ is making people sick. Hospitals are filling up.',
+    choices: (G) => [
+      { label: '🏠 Everyone stay home', run: () => { growthShock(-5, 2); oneTime(.5); mod('poor', -6); mod('workers', -6); tr(3); return 'Fewer people got sick, but many lost work.'; } },
+      { label: '💉 Vaccines and care', run: () => { oneTime(.6); growthShock(-1.5, 2); if (G.eco.humanStock > 1.1) { modAll(3); return 'Great hospitals saved lives! 🏥'; } modAll(-4); return 'Hospitals were too weak. It was hard.'; } },
+      { label: '🏃 Keep working', run: () => { growthShock(-.8, 2); modAll(-7); tr(-5); return 'Many people got sick. Very sad.'; } },
+    ] },
+  { id: 'cyclone', icon: '🌀', title: 'Big Storm Coming!', weight: 1,
+    ctx: () => ({ s: pick(COASTAL) }),
+    text: (G, c) => `A huge storm is coming to ${stateById(c.s).name}.`,
+    choices: (G, c) => [
+      { label: '🚌 Move people to safety early', run: () => { oneTime(.1); mod('poor', 2); allySat(10, c.s); tr(2); return 'Thousands of lives saved! ❤️'; } },
+      { label: '🙂 Normal help', run: () => { mod('poor', -2); allySat(-6, c.s); return 'Help was slow in far villages.'; } },
+    ] },
+  { id: 'farmprotest', icon: '🚜', title: 'Farmers Are Angry!', scheduled: true,
+    text: () => 'Lots of farmers are sitting outside Delhi. They do not like your new farm rule.',
+    choices: (G) => [
+      { label: '↩️ Take the rule back', run: () => { const id = G.gov.passed.includes('farmmkt') ? 'farmmkt' : 'land'; G.gov.passed = G.gov.passed.filter(x => x !== id); G.eco.reformBoost = Math.max(0, G.eco.reformBoost - .2); mod('farmers', 8); mod('business', -3); tr(-4); return 'Farmers go home happy. 🌾'; } },
+      { label: '🤝 Talk with them', pc: 3, run: () => { mod('farmers', 3); return 'Talks started. Farmers slowly go home.'; } },
+      { label: '💪 Do not change', run: () => { mod('farmers', -8); if (rand() < .3) { tr(-5); modAll(-2); return 'There was pushing and shouting. Not good. 😟'; } return 'You stayed strong. Farmers are still upset.'; } },
+    ] },
+  { id: 'strike', icon: '✊', title: 'Workers Stop Working!', scheduled: true,
+    text: () => 'Workers are on strike. They do not like the new factory rules.',
+    choices: () => [
+      { label: '🤝 Make rules kinder', run: () => { mod('workers', 6); mod('business', -3); return 'Workers go back to work. 🏭'; } },
+      { label: '💪 Do not change', run: () => { growthShock(-.6, 1); mod('workers', -5); return 'Factories stopped for a week.'; } },
+    ] },
+  { id: 'fdi', icon: '🔬', title: 'Big Factory Wants to Come!', weight: 1,
+    text: () => 'A big company wants to build a chip factory. Will it choose India?',
+    choices: () => [
+      { label: '🎁 Give them help', run: () => { oneTime(.15); mod('youth', 4); mod('business', 3); G.eco.unempMod -= .2; G.eco.reformBoost += .05; return 'They chose India! 50,000 new jobs! 🎉'; } },
+      { label: '📝 Give land only', run: () => { if (rand() < .5) { mod('youth', 3); G.eco.unempMod -= .15; return 'Yes! They chose India! 🎉'; } mod('youth', -2); return 'They went to another country. 😞'; } },
+      { label: '🙅 No thanks', run: () => { mod('workers', 1); return 'The factory went somewhere else.'; } },
+    ] },
+  { id: 'cricket', icon: '🏏', title: 'India Won the World Cup!', weight: .6,
+    text: () => 'India won the Cricket World Cup! Everyone is dancing!',
+    choices: () => [
+      { label: '🎉 Big party for the team', run: () => { modAll(2); mod('youth', 2); return 'Selfies with the team! Everyone is happy! 🏏'; } },
+      { label: '👏 Say well done', run: () => { modAll(1); return 'Well done, team India!'; } },
+    ] },
+  { id: 'summit', icon: '🌐', title: 'World Leaders Are Visiting', weight: .7,
+    text: () => 'Leaders from many countries are coming to New Delhi.',
+    choices: () => [
+      { label: '✨ Show India\'s best side', run: () => { oneTime(.05); mod('middle', 3); mod('business', 3); tr(1); return 'The world is amazed by India! ✨'; } },
+      { label: '🙂 Keep it simple', run: () => { tr(1); return 'A nice, simple meeting.'; } },
+    ] },
+  { id: 'examleak', icon: '📝', title: 'Exam Paper Leaked', weight: 1,
+    text: () => 'The big doctor exam paper leaked. Students are crying.',
+    choices: () => [
+      { label: '📝 New exam + strict rule', pc: 1, run: () => { mod('youth', 5); return 'Students are thankful. 🎓'; } },
+      { label: '👉 Blame others', run: () => { mod('youth', -4); return 'Students are angry with you.'; } },
+    ] },
+  { id: 'allydemand', icon: '📜', title: 'Your Friend Wants Something', weight: 1, when: G => G.gov.allies.some(a => stateById(a.key)),
+    ctx: (G) => ({ key: pick(G.gov.allies.filter(a => stateById(a.key))).key }),
+    text: (G, c) => { const a = G.gov.allies.find(x => x.key === c.key); return a ? `Your friend ${a.short} wants extra money for ${stateById(c.key).name}.` : 'A friend wants something.'; },
+    choices: (G, c) => [
+      { label: '🎁 Give it', run: () => { oneTime(.12); allySat(-3); allySat(23, c.key); return 'Your friend is happy! Others are a little jealous.'; } },
+      { label: '🙅 Say no', run: () => { allySat(-18, c.key); return 'Your friend is upset. 😠'; } },
+    ] },
+  { id: 'prices', icon: '🧅', title: 'Onions Are So Costly!', weight: 1.5, when: G => G.eco.infl > 6,
+    text: () => 'Onions and tomatoes cost too much. Every family is worried.',
+    choices: () => [
+      { label: '📦 Sell from government stores', run: () => { inflShock(-.6, 2); mod('farmers', -4); return 'Prices came down. 🧅'; } },
+      { label: '🚢 Buy from other countries', run: () => { inflShock(-.4, 2); G.eco.forex -= 10; return 'More onions arrived.'; } },
+      { label: '🤷 Do nothing', run: () => { mod('middle', -4); mod('poor', -5); return 'Families are unhappy. 😟'; } },
+    ] },
+  { id: 'rbiclash', icon: '🏛️', title: 'The Bank Boss Quit', weight: 2, when: G => G.gov.rbiCred < 70,
+    text: () => 'The boss of India\'s main bank quit. He said you pushed him too much.',
+    choices: () => [
+      { label: '🎓 Pick a wise expert', run: () => { G.gov.rbiCred = Math.min(100, G.gov.rbiCred + 25); mod('business', 2); return 'Everyone trusts the new boss. 👍'; } },
+      { label: '🤝 Pick your friend', run: () => { G.gov.rbiCred = Math.max(0, G.gov.rbiCred - 10); G.eco.repo = Math.max(2.5, G.eco.repo - .25); G.eco.sensex *= .96; tr(-3); return 'People are not sure about this. 🤔'; } },
+    ] },
+  { id: 'automation', icon: '🤖', title: 'Robots Taking Jobs', weight: .8,
+    text: () => 'Computers and robots are doing work that people used to do.',
+    choices: () => [
+      { label: '📚 Teach people new skills', run: () => { oneTime(.1); mod('youth', 3); return 'Lots of people are learning new things! 📚'; } },
+      { label: '🤖 Tax the robots', run: () => { G.eco.b.progRev = (G.eco.b.progRev || 0) + .05; mod('business', -4); mod('youth', 2); return 'A robot tax! Companies are grumpy.'; } },
+      { label: '🤷 Do nothing', run: () => { mod('youth', -3); G.eco.unempMod += .1; return 'Some young people can\'t find work.'; } },
+    ] },
+  { id: 'familyallegation', icon: '🗞️', title: 'They Say Your Family Cheated', weight: .7,
+    text: () => 'The other party says your relative got special deals.',
+    choices: () => [
+      { label: '🔍 Let a fair team check', pc: 1, run: () => { tr(3); return 'The check found nothing wrong! ✅'; } },
+      { label: '⚖️ Go to court', run: () => { if (rand() < .5) { tr(1); return 'The court said you are right!'; } tr(-5); return 'The court case went on and on…'; } },
+      { label: '🙈 Ignore it', run: () => { tr(-4); return 'People start to wonder…'; } },
+    ] },
+  { id: 'harvest', icon: '🌽', title: 'Super Harvest!', weight: .8,
+    text: () => 'Farmers grew lots and lots of wheat and rice!',
+    choices: () => [
+      { label: '🛒 Government buys the extra', run: () => { oneTime(.1); mod('farmers', 5); G.eco.food -= .4; return 'Farmers got good money! 🌾'; } },
+      { label: '🚢 Sell to other countries', run: () => { mod('farmers', 3); mod('business', 1); return 'India sends food to the world!'; } },
+    ] },
+  { id: 'stateelection', icon: '🗳️', title: 'Small Elections in States', scheduled: true,
+    text: (G, c) => `${c.states.map(id => stateById(id).name).join(', ')} are choosing their state leaders.`,
+    choices: (G, c) => [
+      { label: '💪 Work very hard', pc: 3, run: () => stateElections(c.states, .12) },
+      { label: '🙂 Work a little', pc: 1, run: () => stateElections(c.states, .03) },
+      { label: '🏛️ Stay in Delhi', run: () => stateElections(c.states, -.08) },
+    ] },
+  { id: 'allythreat', icon: '⚠️', title: 'A Friend Wants to Leave!', scheduled: true,
+    text: (G, c) => { const a = G.gov.allies.find(x => x.key === c.key); return a ? `Your friend ${a.short} (${a.seats} seats) is unhappy and may leave you!` : 'A friend is unhappy.'; },
+    choices: (G, c) => [
+      { label: '🎁 Give money for their state', pc: 1, run: () => { oneTime(.15); allySat(30, c.key); return 'Your friend is happy again! 🤝'; } },
+      { label: '🏛️ Make their leader a minister', pc: 2, run: () => { allySat(25, c.key); tr(-1); return 'They have a minister now. Happy!'; } },
+      { label: '🤞 Say "Please stay"', run: () => allyBluff(c.key) },
+    ] },
+  { id: 'noconfidence', icon: '⚔️', title: 'Big Vote: Should You Stay?', scheduled: true,
+    text: () => `The other parties want to remove you. You have ${govSeats()} seats. You need ${MAJORITY}.`,
+    choices: () => [
+      { label: '🤝 Ask small parties for help', pc: 4, run: () => confidenceVote(.25) },
+      { label: '🤞 Hope for the best', run: () => confidenceVote(0) },
+      { label: '🗳️ Ask people to vote again', run: () => { governmentFalls('You asked for a new election.'); return 'New election coming!'; } },
+    ] },
+];
+
+function stateElections(ids, bonus) {
+  const won = [], lost = [];
+  for (const id of ids) {
+    const a = stateApproval(id);
+    const allied = G.gov.allies.some(x => x.key === id);
+    const p = clamp(.3 + (a - 45) / 40 + bonus + (allied ? .1 : 0), .05, .95);
+    if (rand() < p) won.push(id); else lost.push(id);
+  }
+  G.gov.rs = clamp(G.gov.rs + won.length * 3 - lost.length * 3, 40, 200);
+  G.gov.stateElectionsWon += won.length; G.gov.stateElectionsLost += lost.length;
+  if (won.length > lost.length) modAll(1); else if (lost.length > won.length) modAll(-1);
+  return `You won ${won.length}, lost ${lost.length}. ${won.length >= lost.length ? '🎉' : '😕'}`;
+}
+
+function allyBluff(key) {
+  const a = G.gov.allies.find(x => x.key === key);
+  if (!a) return 'They already left.';
+  if (rand() < .5) { a.sat = clamp(a.sat + 5, 0, 100); return `${a.short} stays with you! 🤝`; }
+  G.gov.allies = G.gov.allies.filter(x => x !== a);
+  if (govSeats() < MAJORITY) G.gov.pendingRisk = 'noconfidence';
+  return `${a.short} left you. 💔 You lost ${a.seats} seats.`;
+}
+
+function confidenceVote(bonus) {
+  const seats = govSeats();
+  const p = clamp(.3 + bonus + (overallApproval() - 45) / 80 + (seats - 250) / 80, .05, .95);
+  if (rand() < p) { G.gov.minority = true; tr(2); return 'You won the vote! You stay PM! 🎉'; }
+  governmentFalls('You lost the vote.');
+  return 'You lost the vote. New election! 🗳️';
+}
+</script>
+<script>
+// RAJNEETI — game rules and simulation. No DOM access here.
+
+let G = null;
+const SAVE_KEY = 'rajneeti.save.v1';
+const MAJORITY = 272;
+const TOTAL_SEATS = 543;
+const RS_TOTAL = 245;
+
+// ---------- helpers ----------
+const rand = () => Math.random();
+const randn = () => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const pick = a => a[Math.floor(rand() * a.length)];
+const round1 = x => Math.round(x * 10) / 10;
+const stateById = id => STATES.find(s => s.id === id);
+const fmtCr = x => '₹' + Math.round(x).toLocaleString('en-IN') + ' cr';
+
+function blocWeights(s) {
+  const u = s.urban;
+  const w = {
+    farmers: .34 * (1 - u) + .02,
+    poor: .30 * (1 - u) + .04,
+    workers: .12 + .10 * u,
+    middle: .06 + .34 * u,
+    youth: .14,
+    business: .02 + .08 * u,
+  };
+  const t = Object.values(w).reduce((a, b) => a + b, 0);
+  for (const k in w) w[k] /= t;
+  return w;
+}
+const WEIGHTS = Object.fromEntries(STATES.map(s => [s.id, blocWeights(s)]));
+
+function log(msg, kind = '') {
+  G.log.unshift({ t: timeLabel(), msg, kind });
+  if (G.log.length > 80) G.log.length = 80;
+}
+
+function timeLabel() {
+  if (G.phase === 'gov' && G.gov) return quarterLabel(G.calQ);
+  if (G.camp) return 'Week ' + G.camp.week;
+  return '';
+}
+
+// calQ counts quarters since June 2029 and never resets, so snap elections keep the calendar right
+function quarterLabel(calQ) {
+  const months = ['Jun–Aug', 'Sep–Nov', 'Dec–Feb', 'Mar–May'];
+  return months[calQ % 4] + ' ' + (2029 + Math.floor(calQ / 4) + (calQ % 4 === 3 ? 1 : 0));
+}
+
+// ---------- new game ----------
+function newGame(o) {
+  const diff = DIFFICULTY[o.difficulty];
+  G = {
+    ver: 1,
+    leader: o.leader, party: o.party, short: o.short, symbol: o.symbol, color: o.color,
+    ideology: o.ideology, difficulty: o.difficulty,
+    calQ: 0, term: 1, termsWon: 0, quartersAsPM: 0,
+    trust: 55,
+    appeal: { you: { ...IDEOLOGIES[o.ideology].appeal }, A: { ...RIVAL_APPEAL.A }, B: { ...RIVAL_APPEAL.B } },
+    shift: {},          // per-state base shift after governing
+    incumbent: 'A',
+    phase: 'campaign',
+    log: [],
+    hist: { growth: [], infl: [], unemp: [], deficit: [], debt: [], approval: [], sensex: [] },
+    promisesKept: 0, promisesBroken: 0,
+    camp: null, gov: null, eco: null, result: null, coal: null, report: null,
+  };
+  startCampaign({ weeks: 10, funds: diff.funds, first: true });
+  log(`${G.leader} launches the ${G.party} campaign. ${MAJORITY} seats needed for a majority.`, 'big');
+  save();
+}
+
+// ---------- campaign ----------
+function startCampaign({ weeks, funds, first, snap }) {
+  const prevAlliances = {};
+  if (G.gov) for (const a of G.gov.allies) if (stateById(a.key)) prevAlliances[a.key] = 'you';
+  const alliances = {};
+  const affinity = {};
+  for (const s of STATES) {
+    if (!s.reg) continue;
+    affinity[s.id] = s.reg.lean;
+    alliances[s.id] = null;
+  }
+  if (first) {
+    alliances.TN = 'you';
+    alliances.BR = 'A';
+    alliances.AP = 'A';
+  } else {
+    Object.assign(alliances, prevAlliances);
+    // parties allied with RSP drift to whichever side looks stronger
+    for (const s of STATES) if (s.reg && !alliances[s.id] && rand() < .35) alliances[s.id] = 'A';
+  }
+  G.camp = {
+    week: 1, weeks, ap: 3, apMax: 3, funds, cadre: first ? 40 : 55,
+    momentum: snap ? -2 : 0, momA: 2, momB: 0,
+    ground: {}, groundA: {}, groundB: {}, alliances, affinity, generous: {}, cooldown: {},
+    promises: [], social: { youth: 0, middle: 0 }, donorRisk: 0, pressDone: false,
+    event: null, polls: [], govAppeal: {},
+  };
+  for (const s of STATES) { G.camp.ground[s.id] = 0; G.camp.groundA[s.id] = 0; G.camp.groundB[s.id] = 0; }
+  if (G.gov) {
+    // governance record shapes your appeal
+    for (const b of BLOCS) G.camp.govAppeal[b.id] = (G.gov.approval[b.id] - 50) * .4;
+  }
+  G.phase = 'campaign';
+  G.camp.polls.push(pollSnapshot());
+  rollCampaignEvent();
+}
+
+function promiseAppeal(b) {
+  let t = 0;
+  for (const id of G.camp.promises) { const p = PROMISES.find(x => x.id === id); t += p.blocs[b] || 0; }
+  return t * (0.5 + G.trust / 100);
+}
+
+function youAppeal(b) {
+  const C = G.camp;
+  return G.appeal.you[b] + promiseAppeal(b) + (C.social[b] || 0) + (C.govAppeal[b] || 0);
+}
+
+function statePoints(s) {
+  const C = G.camp, w = WEIGHTS[s.id], sh = G.shift[s.id] || [0, 0, 0, 0];
+  let aY = 0, aA = 0, aB = 0;
+  for (const b of BLOCS) { aY += w[b.id] * youAppeal(b.id); aA += w[b.id] * G.appeal.A[b.id]; aB += w[b.id] * G.appeal.B[b.id]; }
+  const inc = G.incumbent === 'A' ? -3 : 0; // ten years in power breeds fatigue
+  const you = s.base[0] + DIFFICULTY[G.difficulty].baseBonus + sh[0] + aY * .6 + C.ground[s.id] + C.momentum * .8 + (G.trust - 50) * .08;
+  const A = s.base[1] + sh[1] + aA * .6 + C.groundA[s.id] + C.momA * .8 + inc;
+  const B = s.base[2] + sh[2] + aB * .4 + C.groundB[s.id] + C.momB * .5;
+  const R = s.base[3] + sh[3];
+  return [Math.max(1, you), Math.max(1, A), Math.max(.5, B), Math.max(.5, R)];
+}
+
+function stateShares(s) {
+  const p = statePoints(s), t = p[0] + p[1] + p[2] + p[3];
+  return p.map(x => x / t);
+}
+
+const PKEYS = ['you', 'A', 'B', 'R'];
+
+// One full seat-by-seat simulation of the general election.
+function simulate(noise = .3) {
+  const byState = {};
+  const totals = { you: 0, A: 0, B: 0, R: 0 };
+  const regSeats = {};
+  for (const s of STATES) {
+    const sh = stateShares(s);
+    const al = G.camp.alliances[s.id];
+    let pR = sh[3] / ((al === 'A' ? sh[1] : sh[0]) + sh[3]);
+    if (al === 'you' && G.camp.generous[s.id]) pR = Math.min(.9, pR + .15);
+    const res = { you: 0, A: 0, B: 0, R: 0 };
+    for (let i = 0; i < s.seats; i++) {
+      const v = sh.map(x => x * Math.exp(randn() * noise));
+      if (al) {
+        const X = al === 'you' ? 0 : 1;
+        const comb = (v[X] + v[3]) * .93;
+        if (rand() < pR) { v[3] = comb; v[X] = 0; } else { v[X] = comb; v[3] = 0; }
+      }
+      let w = 0; for (let k = 1; k < 4; k++) if (v[k] > v[w]) w = k;
+      res[PKEYS[w]]++;
+    }
+    byState[s.id] = res;
+    totals.you += res.you; totals.A += res.A; totals.B += res.B; totals.R += res.R;
+    regSeats[s.id] = res.R;
+  }
+  return { byState, totals, regSeats, ...blocTotals(byState) };
+}
+
+function blocTotals(byState) {
+  let youBloc = 0, aBloc = 0, others = 0;
+  for (const s of STATES) {
+    const r = byState[s.id], al = G.camp.alliances[s.id];
+    youBloc += r.you; aBloc += r.A;
+    if (al === 'you') youBloc += r.R; else if (al === 'A') aBloc += r.R; else others += r.R;
+    others += r.B;
+  }
+  return { youBloc, aBloc, others };
+}
+
+function projection(n = 12) {
+  const acc = { byState: {}, totals: { you: 0, A: 0, B: 0, R: 0 }, youBloc: 0, aBloc: 0, others: 0 };
+  for (const s of STATES) acc.byState[s.id] = { you: 0, A: 0, B: 0, R: 0 };
+  for (let i = 0; i < n; i++) {
+    const r = simulate();
+    for (const s of STATES) for (const k of PKEYS) acc.byState[s.id][k] += r.byState[s.id][k] / n;
+    for (const k of PKEYS) acc.totals[k] += r.totals[k] / n;
+    acc.youBloc += r.youBloc / n; acc.aBloc += r.aBloc / n; acc.others += r.others / n;
+  }
+  return acc;
+}
+
+function canAct(cost, ap = 1) {
+  const C = G.camp;
+  if (C.ap < ap) return 'No moves left this week';
+  if (C.funds < cost) return 'Not enough 💰 money';
+  return null;
+}
+
+function spend(cost, ap = 1) { G.camp.funds -= cost; G.camp.ap -= ap; }
+
+const CAMPAIGN_ACTIONS = {
+  rally: {
+    name: 'Mega Rally', icon: '📣', cost: 15, state: true,
+    desc: 'Big boost to local support in this state. Diminishing returns.',
+    run(s) {
+      const C = G.camp, g = C.ground[s.id];
+      const gain = 4.2 * (1 - g / 32);
+      C.ground[s.id] = g + gain; C.momentum += .4;
+      return `Massive crowd at your rally in ${s.name}. Local support +${round1(gain)}.`;
+    },
+  },
+  cadre: {
+    name: 'Door-to-Door Drive', icon: '🚪', cost: 4, state: true,
+    desc: 'Cheap ground work. Stronger with more cadre.',
+    run(s) {
+      const C = G.camp, g = C.ground[s.id];
+      const gain = 2.2 * clamp(C.cadre / 60, .4, 2) * (1 - g / 32);
+      C.ground[s.id] = g + gain;
+      return `Volunteers knock on doors across ${s.name}. Local support +${round1(gain)}.`;
+    },
+  },
+  alliance: {
+    name: 'Alliance Talks', icon: '🤝', cost: 0, state: true,
+    desc: 'Invite the regional party into your alliance.',
+    run(s, generous) {
+      const C = G.camp, cur = C.alliances[s.id];
+      if (generous) C.funds -= 25;
+      if (rand() < allianceChance(s.id, generous)) {
+        C.alliances[s.id] = 'you';
+        if (generous) C.generous[s.id] = true;
+        C.affinity[s.id] = Math.min(1, C.affinity[s.id] + .1);
+        return `🤝 The ${s.reg.name} (${s.reg.short}) joins your alliance in ${s.name}!` + (cur === 'A' ? ' A major blow to the RSP.' : '');
+      }
+      C.affinity[s.id] = Math.max(0, C.affinity[s.id] - .06);
+      C.cooldown[s.id] = C.week + 2;
+      return `The ${s.reg.short} turned down your offer. They won't talk again for 2 weeks.`;
+    },
+  },
+  membership: {
+    name: 'Membership Drive', icon: '🧑‍🤝‍🧑', cost: 6,
+    desc: '+12 cadre. Cadre makes door-to-door drives stronger and brings in small donations.',
+    run() { G.camp.cadre += 12; return 'Membership drive brings in thousands of new volunteers. Cadre +12.'; },
+  },
+  ads: {
+    name: 'National Ad Blitz', icon: '📺', cost: 40,
+    desc: 'TV, newspapers and hoardings everywhere. Momentum +2.5 (fades over time).',
+    run() { G.camp.momentum += 2.5; return 'Your ads dominate prime time. National momentum up.'; },
+  },
+  social: {
+    name: 'Social Media Campaign', icon: '📱', cost: 12,
+    desc: 'Lasting appeal with Youth (+1.5) and Middle Class (+1).',
+    run() {
+      const s = G.camp.social;
+      s.youth = Math.min(10, s.youth + 1.5); s.middle = Math.min(8, s.middle + 1);
+      return 'Your campaign trends on social media. Youth and middle-class appeal up.';
+    },
+  },
+  fundraise: {
+    name: 'Corporate Fundraiser', icon: '💰', cost: 0,
+    desc: 'Raise ₹50–80 cr. Trust −2, and big donors can come back to haunt you.',
+    run() {
+      const C = G.camp, amt = Math.round(50 + Math.max(0, G.appeal.you.business) * 3);
+      C.funds += amt; G.trust = clamp(G.trust - 2, 0, 100); C.donorRisk++;
+      return `Industrialists open their wallets: +${fmtCr(amt)}. Trust −2.`;
+    },
+  },
+  attack: {
+    name: 'Attack the RSP', icon: '⚔️', cost: 10,
+    desc: 'Go negative on the ruling party. Works better when people trust you.',
+    run() {
+      const C = G.camp;
+      if (rand() < .35 + G.trust / 200) {
+        C.momA -= 3; C.momentum += .5;
+        return 'Your attack on the government lands. RSP momentum falls.';
+      }
+      G.trust = clamp(G.trust - 3, 0, 100); C.momentum -= 1;
+      return 'The attack backfires and looks petty. Trust −3.';
+    },
+  },
+  press: {
+    name: 'Press Conference', icon: '🎤', cost: 3,
+    desc: 'Answer tough questions. Trust +3. Once a week.',
+    run() {
+      G.camp.pressDone = true; G.trust = clamp(G.trust + 3, 0, 100);
+      return 'A calm, detailed press conference. Trust +3.';
+    },
+  },
+};
+
+function allianceChance(id, generous) {
+  const C = G.camp, proj = C.polls[C.polls.length - 1];
+  // regional parties back whoever looks like winning
+  const lead = proj ? (proj.you - proj.A) / 500 : 0;
+  const p = .08 + .5 * C.affinity[id] + lead + (generous ? .18 : 0) - (C.alliances[id] === 'A' ? .2 : 0);
+  return clamp(p, .03, .8);
+}
+
+function pollSnapshot() {
+  const p = projection(20);
+  return { you: Math.round(p.totals.you), A: Math.round(p.totals.A), youBloc: Math.round(p.youBloc), aBloc: Math.round(p.aBloc), others: Math.round(p.others) };
+}
+
+function campaignAction(id, stateId, opt) {
+  const a = CAMPAIGN_ACTIONS[id];
+  const err = actionBlocked(id, stateId, opt);
+  if (err) return { err };
+  spend(a.cost);
+  const msg = a.run(stateId ? stateById(stateId) : null, opt);
+  log(msg);
+  save();
+  return { msg };
+}
+
+function actionBlocked(id, stateId, opt) {
+  const a = CAMPAIGN_ACTIONS[id], C = G.camp;
+  const e = canAct(a.cost + (id === 'alliance' && opt ? 25 : 0));
+  if (e) return e;
+  if (C.event) return 'Answer the news card first';
+  if (id === 'press' && C.pressDone) return 'Already held one this week';
+  if (id === 'alliance') {
+    const s = stateById(stateId);
+    if (!s.reg) return 'No regional party here';
+    if (C.alliances[stateId] === 'you') return 'Already your ally';
+    if ((C.cooldown[stateId] || 0) > C.week) return 'They want a break. Try later!';
+  }
+  return null;
+}
+
+// The manifesto is chosen once, up front, as a hand of three promises.
+function choosePromises(ids) {
+  const C = G.camp;
+  C.promises = ids.slice(0, 3);
+  for (const id of C.promises) { const p = PROMISES.find(x => x.id === id); if (p.trust) G.trust = clamp(G.trust + p.trust, 0, 100); }
+  C.manifestoDone = true;
+  C.polls[C.polls.length - 1] = pollSnapshot();
+  log(`📜 Manifesto released: ${C.promises.map(id => PROMISES.find(x => x.id === id).name).join(', ')}.`, 'big');
+  save();
+}
+
+function addPromise(id) {
+  const C = G.camp;
+  if (C.event) return { err: 'Answer the news card first' };
+  if (C.promises.length >= 5) return { err: 'Manifesto full (5 promises max)' };
+  if (C.ap < 1) return { err: 'No moves left this week' };
+  if (C.promises.includes(id)) return { err: 'Already promised' };
+  C.ap--; C.promises.push(id);
+  const p = PROMISES.find(x => x.id === id);
+  if (p.trust) G.trust = clamp(G.trust + p.trust, 0, 100);
+  log(`📜 Manifesto promise: "${p.name}". You must deliver if elected.`);
+  save();
+  return { msg: 'Promise added' };
+}
+
+function rivalTurn() {
+  const C = G.camp, ai = DIFFICULTY[G.difficulty].rivalAI;
+  // RSP targets the states where you are closest to overtaking them
+  if (rand() < .6) C.momA += 1.6 * ai;
+  // RSP counters wherever you have been investing, weighted by seats
+  const targets = STATES.slice().sort((a, b) => (C.ground[b.id] + 2) * b.seats - (C.ground[a.id] + 2) * a.seats).slice(0, 4);
+  for (let i = 0; i < 3; i++) {
+    const s = pick(targets), g = C.groundA[s.id];
+    C.groundA[s.id] = g + 3.5 * ai * (1 - g / 32);
+  }
+  if (rand() < .4) { const s = pick(STATES); C.groundB[s.id] += 2; C.momB += .5; }
+  // RSP courts regional parties
+  if (rand() < .3 * ai) {
+    const free = STATES.filter(s => s.reg && !C.alliances[s.id]);
+    if (free.length) {
+      const s = pick(free);
+      const proj = C.polls[C.polls.length - 1];
+      if (rand() < .6 * (1 - C.affinity[s.id]) + (proj ? (proj.A - proj.you) / 600 : 0)) {
+        C.alliances[s.id] = 'A';
+        log(`⚠️ The ${s.reg.short} (${s.name}) has allied with the RSP.`, 'bad');
+      }
+    }
+  }
+  if (rand() < .08 * ai) {
+    const mine = STATES.filter(s => C.alliances[s.id] === 'you' && C.affinity[s.id] < .5);
+    if (mine.length) {
+      const s = pick(mine);
+      C.alliances[s.id] = 'A'; delete C.generous[s.id];
+      log(`💔 The RSP poached your ally ${s.reg.short} in ${s.name}!`, 'bad');
+    }
+  }
+}
+
+function endWeek() {
+  const C = G.camp;
+  if (C.event) return { err: 'Answer the news card first' };
+  rivalTurn();
+  C.momentum *= .82; C.momA *= .82; C.momB *= .85;
+  const income = Math.round(8 + C.cadre * .15);
+  C.funds += income;
+  C.cadre += 2;
+  C.week++;
+  C.ap = C.apMax; C.pressDone = false;
+  if (C.week > C.weeks) { runElection(); save(); return { election: true }; }
+  C.polls.push(pollSnapshot());
+  log(`New week. Donations +${fmtCr(income)}.`);
+  rollCampaignEvent();
+  save();
+  return {};
+}
+
+function rollCampaignEvent() {
+  const C = G.camp;
+  if (C.week === 1 || rand() > .7) return;
+  const pool = CAMPAIGN_EVENTS.filter(e => !e.when || e.when(G));
+  const e = pick(pool);
+  const ctx = e.ctx ? e.ctx(G) : {};
+  C.event = { id: e.id, ctx };
+}
+
+function resolveCampaignEvent(i) {
+  const C = G.camp, ev = CAMPAIGN_EVENTS.find(e => e.id === C.event.id);
+  const ch = ev.choices(G, C.event.ctx)[i];
+  if (!ch) return { err: 'No such choice' };
+  if (ch.cost && C.funds < ch.cost) return { err: 'Not enough 💰 money' };
+  if (ch.cost) C.funds -= ch.cost;
+  const msg = ch.run(G, C.event.ctx);
+  G.trust = clamp(G.trust, 0, 100);
+  C.event = null;
+  log(msg, 'event');
+  save();
+  return { msg };
+}
+
+// ---------- election ----------
+function runElection() {
+  const r = simulate();
+  const C = G.camp;
+  G.result = r;
+  G.result.alliances = { ...C.alliances };
+  G.phase = 'results';
+  log(`🗳️ Results: your alliance ${r.youBloc}, RSP alliance ${r.aBloc}, others ${r.others}.`, 'big');
+}
+
+function afterResults() {
+  const r = G.result;
+  if (r.youBloc >= MAJORITY) { formGovernment([], false); return 'gov'; }
+  if (r.aBloc >= MAJORITY) { G.phase = 'gameover'; G.endReason = 'lost'; return 'lost'; }
+  startCoalition();
+  return 'coalition';
+}
+
+function startCoalition() {
+  const r = G.result, al = r.alliances;
+  const kingmakers = [];
+  for (const s of STATES) {
+    if (!s.reg || al[s.id] || r.regSeats[s.id] === 0) continue;
+    kingmakers.push({ key: s.id, name: s.reg.name, short: s.reg.short, seats: r.regSeats[s.id], aff: G.camp.affinity[s.id], side: null, tried: false });
+  }
+  if (r.totals.B > 0) kingmakers.push({ key: 'B', name: RIVALS.B.name, short: RIVALS.B.short, seats: r.totals.B, aff: .45, side: null, tried: false });
+  const indep = STATES.filter(s => !s.reg).reduce((t, s) => t + r.byState[s.id].R, 0);
+  if (indep > 0) kingmakers.push({ key: 'IND', name: 'Independents & small parties', short: 'IND', seats: indep, aff: .5, side: null, tried: false });
+  G.coal = { round: 1, rounds: 3, berths: 5, dpm: true, kingmakers, packages: [] };
+  G.phase = 'coalition';
+}
+
+function coalTotals() {
+  const c = G.coal, r = G.result;
+  let you = r.youBloc, A = r.aBloc;
+  for (const k of c.kingmakers) { if (k.side === 'you') you += k.seats; if (k.side === 'A') A += k.seats; }
+  return { you, A };
+}
+
+function coalOffer(key, offer) {
+  const c = G.coal, k = c.kingmakers.find(x => x.key === key);
+  if (k.side || k.tried) return { err: 'Already decided this round' };
+  let bonus = 0;
+  if (offer === 'berth') { if (!c.berths) return { err: 'No cabinet berths left' }; c.berths--; bonus = .25; }
+  if (offer === 'package') { bonus = .3; }
+  if (offer === 'dpm') { if (!c.dpm) return { err: 'Deputy PM post already promised' }; c.dpm = false; bonus = .45; }
+  k.tried = true;
+  const t = coalTotals();
+  const lead = (t.you - t.A) / 100;
+  const p = clamp(k.aff * .7 + bonus + lead * .3, .03, .95);
+  if (rand() < p) {
+    k.side = 'you';
+    if (offer === 'package') c.packages.push(key);
+    return { msg: `✅ ${k.short} (${k.seats} seats) will support your government!` };
+  }
+  return { msg: `❌ ${k.short} refused your offer this round.` };
+}
+
+function coalEndRound() {
+  const c = G.coal;
+  // RSP makes its own offers
+  for (const k of c.kingmakers) {
+    if (k.side) continue;
+    if (rand() < (1 - k.aff) * .45) { k.side = 'A'; log(`${k.short} backs the RSP.`, 'bad'); }
+    k.tried = false;
+  }
+  c.round++;
+  const t = coalTotals();
+  if (t.you >= MAJORITY || t.A >= MAJORITY || c.round > c.rounds) return coalResolve();
+  save();
+  return null;
+}
+
+function coalResolve() {
+  const t = coalTotals();
+  if (t.you >= MAJORITY || (t.you > t.A && G.coal.round > G.coal.rounds)) {
+    const extra = G.coal.kingmakers.filter(k => k.side === 'you');
+    formGovernment(extra, t.you < MAJORITY);
+    return 'gov';
+  }
+  G.phase = 'gameover'; G.endReason = 'lost';
+  save();
+  return 'lost';
+}
+
+// ---------- governance ----------
+function formGovernment(extraAllies, minority) {
+  const r = G.result, al = r.alliances;
+  const allies = [];
+  for (const s of STATES) if (s.reg && al[s.id] === 'you' && r.regSeats[s.id] > 0)
+    allies.push({ key: s.id, name: s.reg.name, short: s.reg.short, seats: r.regSeats[s.id], sat: 65, dislikes: s.reg.dislikes, warned: false });
+  for (const k of extraAllies) {
+    const s = stateById(k.key);
+    allies.push({ key: k.key, name: k.name, short: k.short, seats: k.seats, sat: 50, dislikes: s ? s.reg.dislikes : (k.key === 'B' ? ['market'] : []), warned: false, pkg: (G.coal && G.coal.packages.includes(k.key)) });
+  }
+  const firstTerm = !G.eco;
+  if (firstTerm) initEconomy();
+  const prevApproval = G.gov ? G.gov.approval : null;
+  const promises = G.camp.promises.slice();
+  G.gov = {
+    q: 0, pc: 6, passed: G.gov ? G.gov.passed : [], allies, party: r.totals.you, minority,
+    rs: Math.round(clamp(70 + r.totals.you * .12 + allies.reduce((t, a) => t + a.seats, 0) * .1, 60, 140)),
+    rbiCred: G.gov ? G.gov.rbiCred : 100,
+    approval: prevApproval ? { ...prevApproval } : Object.fromEntries(BLOCS.map(b => [b.id, 50])),
+    blocMods: Object.fromEntries(BLOCS.map(b => [b.id, 0])),
+    honeymoon: 10, promises, flags: G.gov ? G.gov.flags : {}, events: [], prDone: false, rbiDone: false,
+    lastBudgetQ: -1, stateElectionsWon: 0, stateElectionsLost: 0,
+  };
+  G.eco.b.programs = G.eco.b.programs || [];
+  for (const k of G.gov.allies) if (k.pkg) G.eco.b.programs.push({ name: `${k.short} state package`, spend: .06 });
+  G.incumbent = 'you';
+  G.termsWon++;
+  G.phase = 'gov';
+  G.coal = null;
+  log(`🇮🇳 ${G.leader} is sworn in as Prime Minister! Lok Sabha strength: ${govSeats()}.`, 'big');
+  if (minority) log('You lead a minority government. Every vote will be a struggle.', 'bad');
+  startQuarter();
+}
+
+function govSeats() { return G.gov.party + G.gov.allies.reduce((t, a) => t + a.seats, 0); }
+
+function initEconomy() {
+  G.eco = {
+    gdp: 340, growth: 6.4, infl: 5.0, unemp: 7.6, repo: 6.25, debt: 56, effRate: 7.2, yld: 7.1,
+    forex: 640, sensex: 82000, rating: 1, potential: 6.2,
+    infraStock: 3.2, humanStock: .9, reformBoost: 0, boostQueue: [], unempMod: 0, inflMod: 0,
+    oil: 0, food: 0, global: 0, shocks: [], oneTimes: [], revOnces: [], revenue: 0, spending: 0, deficit: 4.4,
+    b: { itr: 30, ctr: 25, gst: 18, infra: 3.2, defence: 1.9, health: .4, education: .5, welfare: 1.4, agri: .6, programs: [], progRev: 0 },
+    last: {},
+  };
+  computeBudget();
+}
+
+function computeBudget() {
+  const e = G.eco, b = e.b;
+  const laffer = (rate, base, k) => (rate / base) * (1 - k * Math.max(0, (rate - base) / base));
+  const income = 3.1 * laffer(b.itr, 30, .35);
+  const corp = 2.9 * laffer(b.ctr, 25, .45) * (1 + (e.growth - 6.4) * .02);
+  const gst = 3.1 * laffer(b.gst, 18, .3);
+  const other = 1.3 + (b.progRev || 0);
+  const revOnce = e.revOnces.reduce((t, x) => t + x.amt, 0);
+  const interest = e.debt * e.effRate / 100;
+  const programs = b.programs.reduce((t, p) => t + p.spend, 0);
+  const oneTime = e.oneTimes.reduce((t, x) => t + x.amt, 0);
+  const core = b.infra + b.defence + b.health + b.education + b.welfare + b.agri + 2.6;
+  e.revenue = income + corp + gst + other + revOnce;
+  e.spending = core + interest + programs + oneTime;
+  e.interest = interest; e.programSpend = programs;
+  e.deficit = e.spending - e.revenue;
+  return e.deficit;
+}
+
+function previewDeficit(budget) {
+  const saved = { ...G.eco.b };
+  Object.assign(G.eco.b, budget);
+  const d = computeBudget();
+  Object.assign(G.eco.b, saved);
+  computeBudget();
+  return d;
+}
+
+const BUDGET_PRESETS = {
+  populist:  { icon: '🎁', name: 'Give gifts', desc: 'Help people and lower taxes. People smile, but savings go down.', d: { welfare: .4, agri: .2, itr: -1, gst: -1 } },
+  balanced:  { icon: '⚖️', name: 'Keep it same', desc: 'No big changes.', d: {} },
+  growth:    { icon: '🏗️', name: 'Build roads', desc: 'Build roads and schools. Good for the future.', d: { infra: .4, education: .15, health: .1, ctr: -2 } },
+  austerity: { icon: '✂️', name: 'Save money', desc: 'Spend less and save. People grumble.', d: { welfare: -.3, infra: -.2, agri: -.1, gst: 1 } },
+};
+
+function budgetPreset(key) {
+  const b = G.eco.b, d = BUDGET_PRESETS[key].d, draft = {};
+  for (const k in BUDGET_LIMITS) {
+    const L = BUDGET_LIMITS[k];
+    draft[k] = Math.round(clamp(b[k] + (d[k] || 0), L.min, L.max) * 10) / 10;
+  }
+  const r = applyBudget(draft);
+  if (!r.err) r.msg = `${BUDGET_PRESETS[key].icon} ${BUDGET_PRESETS[key].name} Budget passed. Deficit ${round1(G.eco.deficit)}% of GDP.`;
+  return r;
+}
+
+// Each quarter the cabinet puts three policy cards on the table; you may play one.
+function dealHand() {
+  const g = G.gov;
+  const open = REFORMS.filter(r => !g.passed.includes(r.id));
+  const promised = open.filter(r => g.promises.some(id => PROMISES.find(p => p.id === id).check.toString().includes(`'${r.id}'`)));
+  const pool = open.slice().sort(() => rand() - .5);
+  const hand = [];
+  if (promised.length && rand() < .6) hand.push(pick(promised).id);
+  for (const r of pool) if (hand.length < 2 && !hand.includes(r.id)) hand.push(r.id);
+  const cards = hand.map(id => ({ type: 'bill', id }));
+  cards.push({ type: 'pm', id: pick(Object.keys(PM_ACTIONS)) });
+  g.hand = cards; g.played = false;
+}
+
+function playCard(i) {
+  const g = G.gov, c = g.hand[i];
+  if (g.played) return { err: 'You already picked one' };
+  const res = c.type === 'bill' ? introduceBill(c.id, 'vote') : pmAction(c.id);
+  if (!res.err) { g.played = true; save(); }
+  return res;
+}
+
+function billChance(id) {
+  const st = billStatus(id);
+  let lsSeats = govSeats() - st.objectors.reduce((t, a) => t + (a.sat - 15 < 35 ? a.seats : 0), 0);
+  const ls = lsSeats >= MAJORITY ? 1 : clamp(.45 + (overallApproval() - 50) / 100, 0, 1);
+  return ls * st.rsChance;
+}
+
+function isBudgetQuarter() { return G.calQ % 4 === 2 || G.gov.q === 0; }
+
+function applyBudget(budget) {
+  const g = G.gov, e = G.eco, old = { ...e.b };
+  if (!isBudgetQuarter() || g.lastBudgetQ === g.q) return { err: 'Money Day is done for this year' };
+  Object.assign(e.b, budget);
+  g.lastBudgetQ = g.q;
+  // immediate political reaction to headline changes
+  const d = k => e.b[k] - old[k];
+  if (d('itr') < 0) mod('middle', -d('itr') * 1.2);
+  if (d('itr') > 0) mod('middle', -d('itr') * 1.6);
+  if (d('ctr') !== 0) mod('business', -d('ctr') * 1.2);
+  if (d('gst') > 0) { mod('middle', -d('gst') * .8); mod('poor', -d('gst') * .6); }
+  if (d('gst') < 0) { mod('middle', -d('gst') * .5); mod('business', -d('gst') * .5); }
+  computeBudget();
+  log(`📒 Union Budget presented. Fiscal deficit target ${round1(e.deficit)}% of GDP.`, 'big');
+  save();
+  return { msg: 'Budget passed' };
+}
+
+function mod(b, x) { G.gov.blocMods[b] += x; }
+function modAll(x) { for (const b of BLOCS) mod(b.id, x); }
+// one-off amounts are a share of one year's GDP, booked as an annualised rate over `quarters`
+function oneTime(pct, quarters = 4) { G.eco.oneTimes.push({ amt: pct * 4 / quarters, left: quarters }); }
+function revOnce(pct, quarters = 4) { G.eco.revOnces.push({ amt: pct * 4 / quarters, left: quarters }); }
+function growthShock(x, quarters) { G.eco.shocks.push({ g: x, i: 0, left: quarters }); }
+function inflShock(x, quarters) { G.eco.shocks.push({ g: 0, i: x, left: quarters }); }
+function allySat(x, key) { for (const a of G.gov.allies) if (!key || a.key === key) a.sat = clamp(a.sat + x, 0, 100); }
+
+function overallApproval() {
+  const a = G.gov.approval;
+  return BLOCS.reduce((t, b) => t + a[b.id] * b.nat, 0);
+}
+
+function stateApproval(id) {
+  const w = WEIGHTS[id], a = G.gov.approval;
+  return BLOCS.reduce((t, b) => t + a[b.id] * w[b.id], 0);
+}
+
+function startQuarter() {
+  const g = G.gov;
+  g.prDone = false; g.rbiDone = false; g.reshuffleDone = false;
+  g.events = [];
+  dealHand();
+  // scheduled events
+  if (G.calQ % 4 === 1 && !g.flags.onoe) g.events.push({ id: 'stateelection', ctx: { states: pickStateElection() } });
+  // random events
+  const pool = GOV_EVENTS.filter(e => !e.scheduled && (!e.when || e.when(G)));
+  const weighted = [];
+  for (const e of pool) for (let i = 0; i < (e.weight || 1) * 2; i++) weighted.push(e);
+  if (g.q > 0 || G.term > 1) {
+    const e1 = pick(weighted);
+    g.events.push({ id: e1.id, ctx: e1.ctx ? e1.ctx(G) : {} });
+    if (rand() < .35) {
+      const e2 = pick(weighted.filter(e => e.id !== e1.id));
+      if (e2) g.events.push({ id: e2.id, ctx: e2.ctx ? e2.ctx(G) : {} });
+    }
+  }
+  // ally unrest
+  for (const a of g.allies) if (a.sat < 25 && !a.warned) { g.events.push({ id: 'allythreat', ctx: { key: a.key } }); a.warned = true; }
+}
+
+function pickStateElection() {
+  const year = G.calQ >> 2;
+  const groups = [['MH', 'HR', 'JH'], ['UP', 'PB', 'UK', 'GA'], ['WB', 'TN', 'KL', 'AS'], ['BR', 'DL', 'KA'], ['MP', 'RJ', 'CG', 'TG']];
+  return groups[(year + G.term) % groups.length];
+}
+
+function resolveGovEvent(i) {
+  const g = G.gov, cur = g.events[0];
+  const ev = GOV_EVENTS.find(e => e.id === cur.id);
+  const ch = ev.choices(G, cur.ctx)[i];
+  if (!ch) return { err: 'No such choice' };
+  if (ch.pc && g.pc < ch.pc) return { err: 'Not enough ⭐ energy' };
+  if (ch.pc) g.pc -= ch.pc;
+  const msg = ch.run(G, cur.ctx);
+  G.trust = clamp(G.trust, 0, 100);
+  g.events.shift();
+  log(msg, 'event');
+  if (G.phase !== 'gov') { save(); return { msg, phaseChange: true }; }
+  save();
+  return { msg };
+}
+
+// --- bills ---
+function billStatus(id) {
+  const r = REFORMS.find(x => x.id === id), g = G.gov;
+  const objectors = g.allies.filter(a => r.tags.some(t => a.dislikes.includes(t)));
+  const ls = govSeats();
+  const lsOk = ls >= MAJORITY;
+  const rsShort = r.money ? 0 : Math.max(0, 123 - g.rs);
+  const appr = overallApproval();
+  const rsChance = rsShort ? clamp(.75 - rsShort / 40 + (appr - 50) / 100, .05, .9) : 1;
+  return { r, objectors, ls, lsOk, rsShort, rsChance, floorPC: Math.ceil(rsShort / 7) };
+}
+
+// mode: 'vote' | 'floor' (spend PC to win over RS) | 'moneyroute' (controversially route as money bill)
+function introduceBill(id, mode = 'vote') {
+  const g = G.gov, st = billStatus(id), r = st.r;
+  if (g.events.length) return { err: 'Answer the news card first' };
+  if (g.passed.includes(id)) return { err: 'Already law' };
+  const extra = mode === 'floor' ? st.floorPC : 0;
+  if (g.pc < r.pc + extra) return { err: 'Not enough ⭐ energy' };
+  g.pc -= r.pc + extra;
+  // allies who dislike it lose patience
+  for (const a of st.objectors) a.sat = clamp(a.sat - 15, 0, 100);
+  // Lok Sabha
+  let lsSeats = govSeats() - st.objectors.reduce((t, a) => t + (a.sat < 35 ? a.seats : 0), 0);
+  if (lsSeats < MAJORITY && rand() > .45 + (overallApproval() - 50) / 100) {
+    log(`❌ ${r.name} defeated in the Lok Sabha. Allies broke ranks.`, 'bad');
+    modAll(-1); save();
+    return { msg: `${r.name} was defeated in the Lok Sabha.`, fail: true };
+  }
+  // Rajya Sabha
+  if (st.rsShort && mode === 'vote' && rand() > st.rsChance) {
+    log(`❌ ${r.name} blocked in the Rajya Sabha.`, 'bad');
+    save();
+    return { msg: `${r.name} passed the Lok Sabha but was blocked in the Rajya Sabha.`, fail: true };
+  }
+  if (st.rsShort && mode === 'moneyroute') {
+    G.trust -= 8; modAll(-1);
+    log('Opposition cries foul over routing the bill as a Money Bill. Trust −8.', 'bad');
+  }
+  enact(r);
+  save();
+  return { msg: `✅ ${r.name} is now law!` };
+}
+
+function enact(r) {
+  const g = G.gov, e = G.eco;
+  g.passed.push(r.id);
+  for (const b in r.blocs) mod(b, r.blocs[b]);
+  if (r.trust) G.trust = clamp(G.trust + r.trust, 0, 100);
+  if (r.spend) e.b.programs.push({ name: r.name, spend: r.spend, grows: r.id === 'ops' });
+  if (r.rev) e.b.progRev = (e.b.progRev || 0) + r.rev;
+  if (r.oneTime) oneTime(r.oneTime);
+  if (r.revOnce) revOnce(r.revOnce, 4);
+  if (r.boost) for (let i = 0; i < 4; i++) e.boostQueue.push(r.boost / 4);
+  if (r.unemp) e.unempMod += r.unemp;
+  if (r.infl) e.inflMod += r.infl;
+  if (r.human) e.humanStock += r.human * .3;
+  if (r.shock) growthShock(r.shock, 2);
+  if (r.flag) g.flags[r.flag] = true;
+  if (r.id === 'lokpal') allySat(-10);
+  if (r.risk) g.pendingRisk = r.risk;
+  computeBudget();
+  log(`✅ ${r.name} passed into law.`, 'good');
+}
+
+// --- PM actions ---
+const PM_ACTIONS = {
+  pr: { name: 'Speech on TV', icon: '📡', pc: 2, desc: 'Talk to the whole country. People feel good.', once: 'prDone',
+    run() { const g = G.gov; g.prUses = (g.prUses || 0) + 1; modAll(4 / (1 + (g.prUses - 1) * .5)); return 'Your address to the nation strikes a chord. Approval up across the board.'; } },
+  rbi: { name: 'Cheaper loans', icon: '🏦', pc: 1, desc: 'Ask the bank to make loans cheaper. Prices may go up later.', once: 'rbiDone',
+    run() { const e = G.eco; e.repo = Math.max(2.5, e.repo - .5); G.gov.rbiCred = Math.max(0, G.gov.rbiCred - 15); mod('business', 2); return 'Under pressure, the RBI cuts rates by 50 bps. Markets cheer; economists worry.'; } },
+  reshuffle: { name: 'New team', icon: '🔄', pc: 2, desc: 'Pick new ministers. Your friends get happy.', once: 'reshuffleDone',
+    run() { G.trust = clamp(G.trust + 3, 0, 100); allySat(8); return 'A sweeping cabinet reshuffle brings in fresh faces and gives allies more posts.'; } },
+};
+
+function pmAction(id) {
+  const a = PM_ACTIONS[id], g = G.gov;
+  if (g.events.length) return { err: 'Answer the news card first' };
+  if (g[a.once]) return { err: 'Already done. Try later!' };
+  if (g.pc < a.pc) return { err: 'Not enough ⭐ energy' };
+  g.pc -= a.pc; g[a.once] = true;
+  const msg = a.run(); log(msg); save();
+  return { msg };
+}
+
+function allyPackage(key) {
+  const g = G.gov, a = g.allies.find(x => x.key === key);
+  if (g.events.length) return { err: 'Answer the news card first' };
+  if (g.pc < 1) return { err: 'Not enough ⭐ energy' };
+  g.pc -= 1; oneTime(.12); a.sat = clamp(a.sat + 22, 0, 100); a.warned = false;
+  log(`Special development package for ${stateById(key) ? stateById(key).name : a.short}. ${a.short} is pleased.`);
+  computeBudget(); save();
+  return { msg: `${a.short} satisfaction +22` };
+}
+
+// --- quarter simulation ---
+function endQuarter() {
+  const g = G.gov, e = G.eco;
+  if (g.events.length) return { err: 'Answer the news card first' };
+  if (isBudgetQuarter() && g.lastBudgetQ !== g.q) return { err: 'Pick the Money Day plan first' };
+  const prev = { growth: e.growth, infl: e.infl, unemp: e.unemp, sensex: e.sensex, deficit: e.deficit, approval: overallApproval() };
+
+  // shocks
+  let gShock = 0, iShock = 0;
+  for (const s of e.shocks) { gShock += s.g; iShock += s.i; s.left--; }
+  e.shocks = e.shocks.filter(s => s.left > 0);
+  if (e.boostQueue.length) e.reformBoost += e.boostQueue.shift();
+  for (const p of e.b.programs) if (p.grows) p.spend += .02;
+
+  computeBudget();
+  const b = e.b;
+  e.infraStock += (b.infra - e.infraStock) * .15;
+  e.humanStock += ((b.health + b.education) - e.humanStock) * .06;
+  // big deficits crowd out private investment and high debt drags on growth
+  e.potential = 6.1 + .6 * (e.infraStock - 3.2) + 1.2 * (e.humanStock - .9) + e.reformBoost + .04 * (25 - b.ctr) - .05 * Math.max(0, b.itr - 30) - (e.rating === 0 ? .6 : 0)
+    - .25 * Math.max(0, e.deficit - 5.5) - .06 * Math.max(0, e.debt - 60);
+  const demand = .25 * clamp(e.deficit - 4.4, -4, 3) - .45 * (e.repo - e.infl - 1.5) + e.global - .04 * (b.gst - 18);
+  const target = e.potential + demand + gShock + randn() * .35;
+  e.growth = clamp(.5 * e.growth + .5 * target, -10, 13);
+
+  const credPenalty = (100 - g.rbiCred) / 100 * 1.6;
+  const oilHit = e.oil * (g.flags.green ? .5 : 1);
+  const foodHit = e.food * clamp(1 - (b.agri - .6) * .6, .3, 1.3);
+  const iTarget = 4.2 + .4 * (e.growth - e.potential) + .45 * (e.deficit - 4.4) - .35 * (e.repo - 6.25) + oilHit + foodHit + .06 * (b.gst - 18) + credPenalty + e.inflMod + iShock;
+  e.infl = clamp(e.infl + .4 * (iTarget - e.infl) + randn() * .2, -1, 18);
+  e.oil *= .6; e.food *= .5; e.global *= .75;
+
+  const uTarget = 7.6 - .45 * (e.growth - 6.4) + e.unempMod;
+  e.unemp = clamp(e.unemp + .25 * (uTarget - e.unemp), 2.5, 20);
+
+  // RBI follows its inflation mandate
+  const repoTarget = clamp(2.2 + e.infl + .5 * (e.infl - 4) + .25 * (e.growth - e.potential), 3, 10);
+  const step = Math.abs(repoTarget - e.repo) > 1 ? .5 : .25;
+  if (Math.abs(repoTarget - e.repo) >= .25) e.repo += Math.sign(repoTarget - e.repo) * step;
+  g.rbiCred = Math.min(100, g.rbiCred + 3);
+
+  const ratingAdj = [1.2, .3, 0, -.2, -.4][e.rating];
+  e.yld = 6.3 + .2 * (e.deficit - 4.4) + .05 * (e.debt - 56) + .4 * (e.repo - 6.25) + ratingAdj;
+  e.effRate += (e.yld - e.effRate) * .1;
+  const nominal = e.growth + e.infl;
+  e.debt = clamp(e.debt + e.deficit / 4 - e.debt * (nominal / 100) / 4, 10, 200);
+  e.gdp *= 1 + nominal / 400;
+  e.sensex *= 1 + (e.growth - 6) * .006 + (g.approval.business - 50) * .0006 + randn() * .035 + gShock * .01;
+  e.forex = Math.max(150, e.forex + 6 - e.oil * 15 + (e.growth - 6) * 3 + randn() * 8);
+
+  for (const x of e.oneTimes) x.left--;
+  e.oneTimes = e.oneTimes.filter(x => x.left > 0);
+  for (const x of e.revOnces) x.left--;
+  e.revOnces = e.revOnces.filter(x => x.left > 0);
+  computeBudget();
+
+  e.last = prev;
+  updateApproval();
+  updateAllies();
+
+  // rating review every year
+  if (G.calQ % 4 === 3) ratingReview();
+
+  const appr = overallApproval();
+  g.pc = Math.min(15, g.pc + clamp(3 + Math.round((appr - 45) / 8), 1, 6));
+  g.honeymoon *= .75;
+
+  for (const k of ['growth', 'infl', 'unemp', 'deficit', 'debt']) G.hist[k].push(round1(e[k]));
+  G.hist.approval.push(round1(appr));
+  G.hist.sensex.push(Math.round(e.sensex));
+  G.quartersAsPM++;
+
+  g.q++; G.calQ++;
+  if (govSeats() < MAJORITY && !g.minority && !g.events.some(x => x.id === 'noconfidence')) {
+    g.minority = true;
+  }
+  if (g.q >= 20) { endTerm(); save(); return { termEnd: true }; }
+  startQuarter();
+  if (g.pendingRisk) { g.events.unshift({ id: g.pendingRisk, ctx: {} }); g.pendingRisk = null; }
+  if (govSeats() < MAJORITY && appr < 42 && rand() < .5) g.events.unshift({ id: 'noconfidence', ctx: {} });
+  save();
+  return {};
+}
+
+function approvalTargets() {
+  const e = G.eco, b = e.b, g = G.gov;
+  const iDev = Math.max(0, e.infl - 4);
+  const dpi = g.flags.dpi ? 1.15 : 1;
+  const sec = (b.defence - 1.9) * 2;
+  const t = {
+    farmers: 45 + (b.agri - .6) * 28 - 1.5 * iDev + (e.food > .5 ? -4 : 0),
+    poor: 45 + (b.welfare - 1.4) * 12 * dpi + (b.health - .4) * 8 - 3 * iDev - (e.unemp - 7.6),
+    workers: 46 - 3 * (e.unemp - 7.6) - 2 * iDev + (e.growth - 6.4),
+    middle: 45 + 1.2 * (30 - b.itr) - 2.5 * iDev + 1.5 * (e.growth - 6.4) - .4 * (b.gst - 18) + sec,
+    youth: 46 - 4 * (e.unemp - 7.6) + (b.education - .5) * 15 + 1.5 * (e.growth - 6.4) + sec * .5,
+    business: 47 + 1.2 * (25 - b.ctr) + 3 * (e.growth - 6.4) - 2 * (e.repo - 6.25) + clamp((e.sensex / (e.last.sensex || e.sensex) - 1) * 100, -15, 15) * .4 - .4 * (b.gst - 18) - (e.rating === 0 ? 6 : 0),
+  };
+  // voters punish governments that run the books into the ground
+  const fiscal = -2 * Math.max(0, e.deficit - 6) - (e.rating === 0 ? 3 : 0);
+  for (const k in t) t[k] += clamp(g.blocMods[k], -25, 25) + g.honeymoon + (G.trust - 50) * .1 + fiscal;
+  return t;
+}
+
+function updateApproval() {
+  const g = G.gov, t = approvalTargets();
+  for (const b of BLOCS) {
+    g.approval[b.id] = clamp(g.approval[b.id] + .35 * (clamp(t[b.id], 3, 97) - g.approval[b.id]), 2, 98);
+    g.blocMods[b.id] *= .85;
+  }
+}
+
+function updateAllies() {
+  const g = G.gov;
+  for (const a of g.allies) {
+    const st = stateById(a.key);
+    const appr = st ? stateApproval(a.key) : overallApproval();
+    const target = 55 + (appr - 50) * .6;
+    a.sat = clamp(a.sat + (target - a.sat) * .2, 0, 100);
+    if (a.sat > 35) a.warned = false;
+  }
+  const leaving = g.allies.filter(a => a.sat < 8);
+  for (const a of leaving) {
+    g.allies = g.allies.filter(x => x !== a);
+    log(`💔 ${a.short} (${a.seats} MPs) has walked out of your coalition!`, 'bad');
+    if (govSeats() < MAJORITY) g.pendingRisk = 'noconfidence';
+  }
+}
+
+function ratingReview() {
+  const e = G.eco;
+  if ((e.deficit > 6.2 || e.debt > 68) && e.rating > 0) {
+    e.rating--; e.sensex *= .92;
+    log(`📉 Rating agencies downgrade India to ${RATINGS[e.rating]}. Borrowing costs rise.`, 'bad');
+    if (e.rating === 0) { modAll(-3); e.forex -= 40; }
+  } else if (e.deficit < 4 && e.growth > 6.8 && e.debt < 60 && e.rating < 4) {
+    e.rating++; e.sensex *= 1.05;
+    log(`📈 Rating upgrade! India is now ${RATINGS[e.rating]}.`, 'good');
+    mod('business', 4);
+  } else log(`Rating agencies keep India at ${RATINGS[e.rating]}.`);
+}
+
+function governmentFalls(reason) {
+  log(`🏛️ ${reason} Your government has fallen. The President dissolves the Lok Sabha.`, 'big');
+  G.endReasonPending = reason;
+  goToElection(true);
+}
+
+function endTerm() {
+  // evaluate promises
+  const kept = [], broken = [];
+  for (const id of G.gov.promises) {
+    const p = PROMISES.find(x => x.id === id);
+    if (p.check(G)) kept.push(p); else broken.push(p);
+  }
+  for (const p of kept) { G.trust += 4; for (const b in p.blocs) if (p.blocs[b] > 0) G.gov.approval[b] = clamp(G.gov.approval[b] + 3, 0, 100); }
+  for (const p of broken) { G.trust -= 6; for (const b in p.blocs) if (p.blocs[b] > 0) G.gov.approval[b] = clamp(G.gov.approval[b] - 4, 0, 100); }
+  G.trust = clamp(G.trust, 0, 100);
+  G.promisesKept += kept.length; G.promisesBroken += broken.length;
+  const e = G.eco;
+  G.report = {
+    term: G.term, kept: kept.map(p => p.name), broken: broken.map(p => p.name),
+    growth: round1(avg(G.hist.growth.slice(-20))), infl: round1(avg(G.hist.infl.slice(-20))),
+    unemp: round1(e.unemp), debt: round1(e.debt), gdp: Math.round(e.gdp), approval: round1(overallApproval()),
+    reforms: G.gov.passed.length,
+  };
+  G.phase = 'termreport';
+}
+
+function goToElection(snap) {
+  // your record becomes your base in each state
+  for (const s of STATES) {
+    const a = stateApproval(s.id);
+    const d = (a - 50) * .35;
+    G.shift[s.id] = [d - 3, -d * .3, 0, 0]; // -3: anti-incumbency
+  }
+  G.appeal.A = { ...RIVAL_APPEAL.A };
+  G.term++;
+  G.incumbent = 'you';
+  startCampaign({ weeks: snap ? 5 : 7, funds: 240 + Math.round(overallApproval() * 2), first: false, snap });
+  log(snap ? 'Snap elections are called. Six weeks to save your premiership.' : `Five years done. The nation votes again. Campaign for term ${G.term}!`, 'big');
+  save();
+}
+
+function legacyScore() {
+  const yrs = G.quartersAsPM / 4;
+  const g = avg(G.hist.growth);
+  const score = Math.round(yrs * 120 + Math.max(0, g) * 40 * Math.min(yrs, 10) / 5 + G.promisesKept * 40 - G.promisesBroken * 25 + (G.gov ? G.gov.passed.length * 15 : 0));
+  let title = 'New Leader 🌱';
+  if (yrs === 0) title = 'Brave Fighter 💪';
+  else if (score > 2600) title = 'Legend of India 🏆';
+  else if (score > 1800) title = 'Super PM 🌟';
+  else if (score > 1100) title = 'Great PM 👏';
+  else if (score > 500) title = 'Good PM 🙂';
+  return { score: Math.max(0, score), title, yrs };
+}
+
+// ---------- save ----------
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G)); } catch (e) { /* storage unavailable */ } }
+function load() {
+  try { const s = localStorage.getItem(SAVE_KEY); if (s) { G = JSON.parse(s); return true; } } catch (e) { /* ignore */ }
+  return false;
+}
+function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } }
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ } }
+</script>
+<script>
+// RAJNEETI — casual mobile game interface. One big card, a few big buttons.
+
+const UI = { screen: 'title', reveal: null, setup: null, toastT: null, deal: null, pdeal: null, card: 0 };
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const buzz = (ms = 12) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* not supported */ } };
+
+const PROMISE_ICON = { loanwaiver: '🚜', msp: '🌾', taxcut: '💸', jobs: '👷', ops: '👴', cash: '👩', health: '🏥', corptax: '🏢', prices: '🧅', infra: '🛣️', lokpal: '🕵️', skills: '🛠️' };
+const REFORM_ICON = { gst: '🧾', labour: '🏭', farmmkt: '🌽', msp: '🌾', loanwaiver: '🚜', pli: '📱', disinvest: '🏷️', bankrecap: '🏦', health: '🏥', cash: '👩', ops: '👴', itsimple: '📄', green: '☀️', dpi: '📲', lokpal: '🕵️', land: '🏗️', urbanjobs: '🧱', skills: '🛠️', demo: '💵', onoe: '🗳️' };
+
+function toast(msg, kind = '') {
+  const t = $('#toast');
+  t.textContent = msg; t.className = 'toast show ' + kind;
+  clearTimeout(UI.toastT);
+  UI.toastT = setTimeout(() => { t.className = 'toast'; }, 2600);
+}
+
+function handle(res) {
+  if (!res) return;
+  if (res.err) { toast(res.err, 'bad'); buzz(40); }
+  else if (res.msg) { toast(res.msg, res.fail ? 'bad' : 'good'); buzz(15); }
+  render();
+}
+
+// 👍🌾 👎💼 — who likes / dislikes something, as emoji only
+function fans(blocs) {
+  const up = [], down = [];
+  for (const [b, v] of Object.entries(blocs)) (v > 0 ? up : down).push(BLOCS.find(x => x.id === b).icon);
+  return `<div class="fans">${up.length ? `<span class="like">👍 ${up.join('')}</span>` : ''}${down.length ? `<span class="dislike">👎 ${down.join('')}</span>` : ''}</div>`;
+}
+
+const word = (good, ok) => good ? '😀 Yes' : ok ? '😐 OK' : '😟 No';
+
+function tug(you, A, label = 'Get 272 to win 👑') {
+  const w = x => (x / TOTAL_SEATS * 100).toFixed(1) + '%';
+  return `<div class="tug">
+    <div class="tugtop"><span class="who"><i class="av" style="background:${G.color}">${G.symbol}</i><b>${you}</b></span><span class="need">${label}</span><span class="who right"><b>${A}</b><i class="av" style="background:${RIVALS.A.color}">🔥</i></span></div>
+    <div class="tugbar"><i class="me" style="width:${w(you)};background:${G.color}"></i><i class="them" style="width:${w(A)};background:${RIVALS.A.color}"></i><span class="crown">👑</span></div>
+  </div>`;
+}
+
+function topbar(chips) {
+  return `<header class="top">${chips.map(c => `<span class="chip">${c}</span>`).join('')}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
+}
+
+// ---------------- title & setup ----------------
+function renderTitle() {
+  return `<div class="screen title">
+    <div class="logo-art">🏛️</div>
+    <h1 class="logo">RAJNEETI</h1>
+    <p class="sub">Become Prime Minister!</p>
+    <div class="spacer"></div>
+    ${hasSave() ? '<button class="gbtn green big" data-a="continue">▶ CONTINUE</button>' : ''}
+    <button class="gbtn ${hasSave() ? 'blue' : 'green'} big" data-a="newgame">${hasSave() ? 'NEW GAME' : '▶ PLAY'}</button>
+    <button class="gbtn ghost" data-a="help">How to play</button>
+  </div>`;
+}
+
+function renderSetup() {
+  const s = UI.setup;
+  return `<div class="screen title">
+    <h2 class="white">Who are you?</h2>
+    <input id="f-leader" class="bigin" maxlength="22" value="${esc(s.leader)}" placeholder="Your name">
+    <p class="white small">Pick your party symbol</p>
+    <div class="symbols">${PARTY_SYMBOLS.map((x, i) => `<button class="symb ${s.symbol === x ? 'on' : ''}" style="background:${PARTY_COLORS[i % PARTY_COLORS.length]}" data-a="setsym" data-v="${x}" data-c="${PARTY_COLORS[i % PARTY_COLORS.length]}">${x}</button>`).join('')}</div>
+    <div class="spacer"></div>
+    <button class="gbtn green big" data-a="start">START ▶</button>
+  </div>`;
+}
+
+function helpHTML() {
+  return `<h2>How to play</h2>
+  <div class="howto">
+    <div><span>🃏</span><p>Pick a card each turn.</p></div>
+    <div><span>🤝</span><p>Make friends with local parties — they bring seats.</p></div>
+    <div><span>👑</span><p>Get <b>272 seats</b> to become PM.</p></div>
+    <div><span>👉</span><p>As PM, swipe right to say yes, left to say no.</p></div>
+    <div><span>😀</span><p>Keep people happy. Win again!</p></div>
+  </div>
+  <button class="gbtn green" data-a="closemodal">OK!</button>`;
+}
+
+// ---------------- campaign ----------------
+function dealCampaign() {
+  const C = G.camp, cards = [];
+  const sh = s => stateShares(s);
+  const battle = STATES.filter(s => s.seats >= 10).map(s => { const x = sh(s); return { s, v: s.seats * (1.2 - Math.abs(x[0] - x[1])) * (1 + rand() * .6) }; }).sort((a, b) => b.v - a.v);
+  if (C.funds >= 15) cards.push({ k: 'rally', s: battle[0].s.id });
+  const allies = STATES.filter(s => s.reg && C.alliances[s.id] !== 'you' && !actionBlocked('alliance', s.id))
+    .map(s => ({ s, v: allianceChance(s.id) * s.seats * (1 + rand() * .8) })).sort((a, b) => b.v - a.v);
+  if (allies.length) cards.push({ k: 'alliance', s: allies[0].s.id });
+  if (C.funds < 40) cards.push({ k: 'fundraise' });
+  else cards.push({ k: rand() < .65 ? 'ads' : 'attack' });
+  if (cards.length < 3 && !cards.some(c => c.k === 'fundraise')) cards.push({ k: 'fundraise' });
+  if (cards.length < 3 && C.funds >= 15) cards.push({ k: 'rally', s: battle[1].s.id });
+  UI.deal = cards;
+}
+
+function moveCard(c, i) {
+  const s = c.s ? stateById(c.s) : null;
+  let icon, title, sub, badge;
+  if (c.k === 'rally') { icon = '📣'; title = `Big rally in ${s.name}`; sub = `Win hearts · ${s.seats} seats`; badge = '💰15'; }
+  if (c.k === 'alliance') { const ch = allianceChance(s.id); icon = '🤝'; title = `Make friends in ${s.name}`; sub = `Their local party joins you`; badge = ch >= .5 ? 'Easy 😀' : ch >= .25 ? 'Maybe 🤞' : 'Hard 😬'; }
+  if (c.k === 'ads') { icon = '📺'; title = 'Ads on TV'; sub = 'Everyone sees you'; badge = '💰40'; }
+  if (c.k === 'attack') { icon = '⚔️'; title = 'Show RSP mistakes'; sub = 'Can go wrong!'; badge = '💰10'; }
+  if (c.k === 'fundraise') { icon = '💰'; title = 'Collect money'; sub = 'Get 💰50 more'; badge = 'FREE'; }
+  const blocked = actionBlocked(c.k, c.s);
+  return `<button class="mcard" data-a="move" data-i="${i}" ${blocked ? 'disabled' : ''} style="animation-delay:${i * 60}ms">
+    <span class="mi">${icon}</span><span class="mt"><b>${title}</b><small>${sub}</small></span><span class="badge">${badge}</span></button>`;
+}
+
+function renderCampaign() {
+  const C = G.camp;
+  const last = C.polls[C.polls.length - 1];
+  if (!C.manifestoDone && !C.promises.length) return renderManifesto(last);
+  if (!UI.deal) dealCampaign();
+  const ev = C.event && CAMPAIGN_EVENTS.find(e => e.id === C.event.id);
+  return `<div class="screen">
+    ${topbar([`📅 Week ${C.week}/${C.weeks}`, `💰 ${Math.round(C.funds)}`])}
+    ${tug(last.youBloc, last.aBloc)}
+    ${ev ? eventCard(ev, C.event.ctx, 'cev') : `
+    <div class="stage">
+      <p class="prompt">Pick one! <span class="dots">${'●'.repeat(C.ap)}${'○'.repeat(C.apMax - C.ap)}</span></p>
+      <div class="mcards">${UI.deal.map(moveCard).join('')}</div>
+    </div>`}
+  </div>`;
+}
+
+function renderManifesto(last) {
+  const C = G.camp;
+  if (!UI.pdeal) {
+    const chosen = UI.picked || [];
+    UI.pdeal = PROMISES.filter(p => !chosen.includes(p.id)).sort(() => rand() - .5).slice(0, 3).map(p => p.id);
+  }
+  const n = (UI.picked || []).length;
+  return `<div class="screen">
+    ${topbar([`📜 Promise ${n + 1} of 3`])}
+    ${tug(last.youBloc, last.aBloc)}
+    <div class="stage">
+      <p class="prompt">What do you promise India?</p>
+      <div class="mcards">${UI.pdeal.map((id, i) => {
+        const p = PROMISES.find(x => x.id === id);
+        return `<button class="mcard" data-a="promise" data-id="${id}" style="animation-delay:${i * 60}ms"><span class="mi">${PROMISE_ICON[id]}</span><span class="mt"><b>${p.name}</b>${fans(p.blocs)}</span></button>`;
+      }).join('')}</div>
+    </div>
+  </div>`;
+}
+
+function eventCard(ev, ctx, kind) {
+  const choices = ev.choices(G, ctx);
+  return `<div class="stage">
+    <div class="bigcard news">
+      <div class="emo">${ev.icon}</div><h2>${ev.title}</h2><p>${esc(ev.text(G, ctx))}</p>
+    </div>
+    <div class="answers">${choices.map((c, i) => `<button class="gbtn ${['blue', 'orange', 'red'][i]}" data-a="${kind}" data-i="${i}" ${(c.pc && G.gov && c.pc > G.gov.pc) || (c.cost && G.camp && kind === 'cev' && c.cost > G.camp.funds) ? 'disabled' : ''}>${c.label}${c.cost ? ` <small>₹${c.cost}</small>` : ''}${c.pc ? ` <small>${c.pc}⭐</small>` : ''}</button>`).join('')}</div>
+  </div>`;
+}
+
+// ---------------- results ----------------
+function renderResults() {
+  const r = G.result;
+  const order = STATES.slice().sort((a, b) => a.seats - b.seats);
+  if (!UI.reveal) {
+    UI.reveal = { n: 0 };
+    const step = () => {
+      if (!UI.reveal || G.phase !== 'results') return;
+      UI.reveal.n++; buzz(5);
+      render();
+      if (UI.reveal.n < order.length) UI.reveal.timer = setTimeout(step, 180);
+    };
+    UI.reveal.timer = setTimeout(step, 500);
+  }
+  let you = 0, A = 0;
+  for (const s of order.slice(0, UI.reveal.n)) {
+    const x = r.byState[s.id], al = r.alliances[s.id];
+    you += x.you + (al === 'you' ? x.R : 0); A += x.A + (al === 'A' ? x.R : 0);
+  }
+  const done = UI.reveal.n >= order.length;
+  const latest = order[Math.min(UI.reveal.n, order.length) - 1];
+  let verdict = '';
+  if (done) {
+    if (r.youBloc >= MAJORITY) verdict = '<div class="verdict win">🎉 YOU WIN! 🎉</div>';
+    else if (r.aBloc >= MAJORITY) verdict = '<div class="verdict lose">😢 YOU LOST</div>';
+    else verdict = '<div class="verdict">🤔 Nobody got 272! Find friends!</div>';
+  }
+  return `<div class="screen">
+    ${topbar(['🗳️ Counting votes'])}
+    <div class="stage">
+      <div class="bignums"><div style="color:${G.color}"><b>${you}</b><small>${G.symbol} YOU</small></div><div class="vsx">VS</div><div style="color:${RIVALS.A.color}"><b>${A}</b><small>🔥 RSP</small></div></div>
+      ${tug(you, A, '272 to win')}
+      ${!done && latest ? `<p class="prompt">${latest.name}…</p>` : verdict}
+    </div>
+    <div class="bottom">${done ? '<button class="gbtn green big" data-a="afterresults">NEXT ▶</button>' : '<button class="gbtn ghost" data-a="skipreveal">Skip ⏩</button>'}</div>
+  </div>`;
+}
+
+// ---------------- coalition ----------------
+function renderCoalition() {
+  const c = G.coal, t = coalTotals();
+  const k = c.kingmakers.find(x => !x.side && !x.tried);
+  return `<div class="screen">
+    ${topbar([`🤝 Find friends · Try ${Math.min(c.round, c.rounds)}/${c.rounds}`])}
+    ${tug(t.you, t.A)}
+    ${k ? `<div class="stage">
+      <div class="bigcard"><div class="emo">🤝</div><h2>${esc(k.short)}</h2><p>This party has <b>${k.seats} seats</b>. Will they be your friend?</p></div>
+      <div class="answers">
+        <button class="gbtn blue" data-a="offer" data-k="${k.key}" data-o="ask">🙏 Just ask</button>
+        <button class="gbtn orange" data-a="offer" data-k="${k.key}" data-o="berth" ${c.berths ? '' : 'disabled'}>🏛️ Make them minister</button>
+        <button class="gbtn green" data-a="offer" data-k="${k.key}" data-o="package">🎁 Give money to their state</button>
+      </div></div>`
+    : `<div class="stage"><p class="prompt">Waiting for the others…</p></div><div class="bottom"><button class="gbtn green big" data-a="coalround">NEXT ▶</button></div>`}
+  </div>`;
+}
+
+// ---------------- governance ----------------
+function meter(icon, good, label) {
+  const g = clamp(good, 0, 1);
+  const col = g >= .6 ? '#4ade80' : g >= .35 ? '#facc15' : '#f87171';
+  return `<div class="meter"><div class="mfill"><i style="height:${Math.max(6, g * 100)}%;background:${col}"></i><span>${icon}</span></div><small>${label}</small></div>`;
+}
+
+function renderGov() {
+  const g = G.gov, e = G.eco;
+  if (!g.hand) dealHand();
+  const ev = g.events[0];
+  const budgetDue = isBudgetQuarter() && g.lastBudgetQ !== g.q;
+  let stage;
+  if (ev) stage = eventCard(GOV_EVENTS.find(x => x.id === ev.id), ev.ctx, 'gev');
+  else if (budgetDue) stage = budgetStage();
+  else if (!g.played && UI.card < g.hand.length) stage = ideaStage(g.hand[UI.card]);
+  else stage = `<div class="stage"><div class="bigcard"><div class="emo">⏳</div><h2>Time passes…</h2></div></div><div class="bottom"><button class="gbtn green big" data-a="endq">NEXT ▶</button></div>`;
+  return `<div class="screen">
+    ${topbar([`📅 Year ${Math.floor(g.q / 4) + 1}/5`, `⭐ ${g.pc} energy`])}
+    <div class="meters" data-a="stats">
+      ${meter('😀', (overallApproval() - 25) / 45, 'Happy')}
+      ${meter('🏭', (e.growth - 2) / 7, 'Jobs')}
+      ${meter('🛒', 1 - (e.infl - 3.5) / 6, 'Prices')}
+      ${meter('🐷', 1 - (e.deficit - 3.5) / 4.5, 'Savings')}
+    </div>
+    ${stage}
+  </div>`;
+}
+
+function budgetStage() {
+  const icons = { populist: 'green', balanced: 'blue', growth: 'orange', austerity: 'red' };
+  return `<div class="stage">
+    <div class="bigcard"><div class="emo">📒</div><h2>Money Day!</h2><p>How will you use India's money this year?</p></div>
+    <div class="grid2">${Object.entries(BUDGET_PRESETS).map(([k, p]) => `<button class="gbtn ${icons[k]}" data-a="preset" data-k="${k}">${p.icon} ${p.name}</button>`).join('')}</div>
+    <p class="tiny">Gifts make people happy now. Saving keeps India safe later.</p>
+  </div>`;
+}
+
+function ideaStage(c) {
+  const g = G.gov;
+  let icon, title, desc, extra = '', cost, can;
+  if (c.type === 'pm') {
+    const a = PM_ACTIONS[c.id];
+    icon = a.icon; title = a.name; desc = a.desc; cost = a.pc; can = g.pc >= a.pc && !g[a.once];
+  } else {
+    const r = REFORMS.find(x => x.id === c.id), st = billStatus(r.id);
+    const promised = g.promises.some(id => PROMISES.find(p => p.id === id).check.toString().includes(`'${r.id}'`));
+    icon = REFORM_ICON[r.id] || '📜'; title = r.name; desc = r.desc; cost = r.pc; can = g.pc >= r.pc;
+    extra = `${promised ? '<div class="promised">📜 You promised this!</div>' : ''}${fans(r.blocs)}${st.objectors.length ? `<div class="warnline">😠 ${st.objectors.map(a => a.short).join(', ')} won't like it</div>` : ''}`;
+  }
+  return `<div class="stage">
+    <div class="bigcard swipe" data-can="${can ? 1 : 0}">
+      <div class="stamp yes">YES</div><div class="stamp no">NO</div>
+      <span class="costtag ${can ? '' : 'poor'}">${cost} ⭐</span>
+      <div class="emo">${icon}</div><h2>${title}</h2><p>${desc}</p>${extra}
+    </div>
+    <div class="yesno">
+      <button class="round red" data-a="skipcard" aria-label="No">✖</button>
+      <span class="tiny">${can ? 'NO ← swipe → YES' : 'Need more ⭐ energy'}</span>
+      <button class="round green" data-a="playcard" ${can ? '' : 'disabled'} aria-label="Yes">✔</button>
+    </div>
+  </div>`;
+}
+
+// ---------------- end screens ----------------
+function renderReport() {
+  const r = G.report;
+  return `<div class="screen title">
+    <div class="logo-art">📋</div><h2 class="white">5 years done!</h2>
+    <div class="bigcard">
+      <p>😀 People happy: <b>${r.approval}%</b></p>
+      <p>✅ Promises kept <b>${r.kept.length}</b> · ❌ broken <b>${r.broken.length}</b></p>
+    </div>
+    <div class="spacer"></div>
+    <button class="gbtn green big" data-a="reelect">ELECTION TIME ▶</button>
+  </div>`;
+}
+
+function renderGameOver() {
+  const L = legacyScore();
+  const lostFirst = G.quartersAsPM === 0;
+  return `<div class="screen title">
+    <div class="logo-art">${lostFirst ? '😢' : '🏆'}</div>
+    <h2 class="white">${lostFirst ? 'So close! Try again.' : `You ruled for ${L.yrs} years!`}</h2>
+    <div class="bigcard"><small>YOUR TITLE</small><h2>${L.title}</h2><div class="score">⭐ ${L.score}</div></div>
+    <div class="spacer"></div>
+    <button class="gbtn green big" data-a="newgame">PLAY AGAIN ▶</button>
+  </div>`;
+}
+
+// ---------------- router ----------------
+function render() {
+  let html;
+  if (UI.screen === 'setup') html = renderSetup();
+  else if (!G || UI.screen === 'title') html = renderTitle();
+  else if (G.phase === 'campaign') html = renderCampaign();
+  else if (G.phase === 'results') html = renderResults();
+  else if (G.phase === 'coalition') html = renderCoalition();
+  else if (G.phase === 'gov') html = renderGov();
+  else if (G.phase === 'termreport') html = renderReport();
+  else html = renderGameOver();
+  $('#app').innerHTML = html;
+  bindSwipe();
+}
+
+function openModal(html) {
+  closeModal();
+  const m = document.createElement('div');
+  m.className = 'modal-bg'; m.id = 'popup';
+  m.innerHTML = `<div class="modal">${html}</div>`;
+  $('#app').appendChild(m);
+}
+function closeModal() { const m = $('#popup'); if (m) m.remove(); }
+
+// Drag the idea card: right = yes, left = no.
+function bindSwipe() {
+  const card = $('.swipe');
+  if (!card) return;
+  let x0 = null, dx = 0;
+  const can = card.dataset.can === '1';
+  card.addEventListener('pointerdown', e => { x0 = e.clientX; dx = 0; card.setPointerCapture(e.pointerId); card.style.transition = 'none'; });
+  card.addEventListener('pointermove', e => {
+    if (x0 === null) return;
+    dx = e.clientX - x0;
+    if (!can && dx > 0) dx = Math.min(dx, 30);
+    card.style.transform = `translateX(${dx}px) rotate(${dx / 16}deg)`;
+    card.querySelector('.yes').style.opacity = clamp(dx / 80, 0, 1);
+    card.querySelector('.no').style.opacity = clamp(-dx / 80, 0, 1);
+  });
+  const end = () => {
+    if (x0 === null) return;
+    x0 = null;
+    card.style.transition = 'transform .25s';
+    if (dx > 80 && can) flyOut(card, 1, () => ACTIONS.playcard());
+    else if (dx < -80) flyOut(card, -1, () => ACTIONS.skipcard());
+    else { card.style.transform = ''; card.querySelectorAll('.stamp').forEach(s => { s.style.opacity = 0; }); }
+  };
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', end);
+}
+
+function flyOut(card, dir, then) {
+  buzz(15);
+  card.style.transform = `translateX(${dir * 520}px) rotate(${dir * 30}deg)`;
+  setTimeout(then, 200);
+}
+
+function finishQuarter() {
+  const before = overallApproval();
+  const r = endQuarter();
+  if (r.err) { toast(r.err, 'bad'); return render(); }
+  UI.card = 0;
+  if (G.phase === 'gov') {
+    const d = Math.round(overallApproval() - before);
+    toast(d >= 0 ? '😀 People are happier!' : '😟 People are less happy', d >= 0 ? 'good' : 'bad');
+  }
+  render();
+}
+
+const ACTIONS = {
+  continue() { if (load()) { UI.screen = 'game'; UI.deal = null; UI.card = 0; render(); } },
+  newgame() { UI.setup = { leader: '', symbol: PARTY_SYMBOLS[0], color: PARTY_COLORS[0] }; UI.screen = 'setup'; G = null; render(); },
+  help() { openModal(helpHTML()); },
+  closemodal() { closeModal(); },
+  setsym(d) { UI.setup.leader = $('#f-leader').value; UI.setup.symbol = d.v; UI.setup.color = d.c; buzz(8); render(); },
+  start() {
+    const name = ($('#f-leader').value || '').trim() || 'Asha Verma';
+    const s = UI.setup;
+    newGame({ leader: name, party: 'Jan Shakti Party', short: 'JSP', symbol: s.symbol, color: s.color, ideology: 'centrist', difficulty: 'normal' });
+    UI.screen = 'game'; UI.reveal = null; UI.deal = null; UI.pdeal = null; UI.picked = []; UI.card = 0;
+    render();
+    let seen = false; try { seen = !!localStorage.getItem('rajneeti.seenHelp'); localStorage.setItem('rajneeti.seenHelp', '1'); } catch (e) { /* ignore */ }
+    if (!seen) openModal(helpHTML());
+  },
+  promise(d) {
+    buzz(10);
+    UI.picked = (UI.picked || []).concat(d.id); UI.pdeal = null;
+    if (UI.picked.length === 3) { choosePromises(UI.picked); UI.picked = []; toast('📣 Promises announced!', 'good'); }
+    render();
+  },
+  move(d) {
+    const c = UI.deal[+d.i];
+    const before = G.camp.polls[G.camp.polls.length - 1].youBloc;
+    const trust0 = G.trust;
+    const r = campaignAction(c.k, c.s, false);
+    if (r.err) return handle(r);
+    const s = c.s && stateById(c.s);
+    const say = {
+      rally: `📣 Big crowd in ${s && s.name}!`,
+      alliance: s && G.camp.alliances[c.s] === 'you' ? `🤝 New friend in ${s.name}! 🎉` : '😕 They said no. Try later.',
+      ads: '📺 Everyone saw your ad!',
+      fundraise: '💰 You got more money!',
+      attack: G.trust < trust0 ? '😬 Oops! That went wrong.' : '⚔️ It worked! RSP looks bad.',
+    }[c.k];
+    toast(say, say.startsWith('😕') || say.startsWith('😬') ? 'bad' : 'good'); buzz(15);
+    UI.deal = null;
+    if (G.camp.ap === 0) {
+      const w = endWeek();
+      if (!w.election) {
+        const now = G.camp.polls[G.camp.polls.length - 1].youBloc;
+        toast(now >= before ? `📈 You went up ${now - before} seats!` : `📉 You went down ${before - now} seats`, now >= before ? 'good' : 'bad');
+      } else UI.reveal = null;
+    }
+    render();
+  },
+  cev(d) { UI.deal = null; handle(resolveCampaignEvent(+d.i)); },
+  skipreveal() { clearTimeout(UI.reveal.timer); UI.reveal.n = 999; render(); },
+  afterresults() {
+    UI.reveal = null; afterResults(); save(); UI.card = 0; render();
+    if (G.phase === 'gov') welcomePM();
+  },
+  offer(d) {
+    const k = G.coal.kingmakers.find(x => x.key === d.k);
+    const r = coalOffer(d.k, d.o); save();
+    if (r.err) return handle(r);
+    toast(k.side === 'you' ? `🎉 ${k.short} joins you!` : `😕 ${k.short} said no.`, k.side === 'you' ? 'good' : 'bad'); buzz(15);
+    render();
+  },
+  coalround() { coalEndRound(); save(); UI.card = 0; render(); if (G.phase === 'gov') welcomePM(); },
+  gev(d) {
+    const r = resolveGovEvent(+d.i);
+    if (r.err) { toast(r.err, 'bad'); return; }
+    toast(r.msg, 'good'); buzz(15);
+    if (r.phaseChange) { UI.deal = null; UI.pdeal = null; UI.picked = []; }
+    render();
+  },
+  preset(d) { const r = budgetPreset(d.k); if (r.err) return handle(r); toast(`${BUDGET_PRESETS[d.k].icon} Done!`, 'good'); render(); },
+  playcard() {
+    const r = playCard(UI.card);
+    if (r.err) { toast(r.err, 'bad'); return render(); }
+    finishQuarter();
+    toast(r.fail ? '😞 Not enough votes. It did not pass.' : '🎉 Yes! It is done!', r.fail ? 'bad' : 'good');
+  },
+  skipcard() { UI.card++; if (UI.card >= G.gov.hand.length) finishQuarter(); else render(); },
+  endq() { finishQuarter(); },
+  stats() {
+    const e = G.eco;
+    openModal(`<h2>🇮🇳 India</h2>
+      <div class="srow"><span>😀 Are people happy?</span><b>${word(overallApproval() >= 50, overallApproval() >= 40)}</b></div>
+      <div class="srow"><span>🏭 Are there jobs?</span><b>${word(e.growth >= 6, e.growth >= 4)}</b></div>
+      <div class="srow"><span>🛒 Are prices OK?</span><b>${word(e.infl <= 4.5, e.infl <= 6.5)}</b></div>
+      <div class="srow"><span>🐷 Is India saving money?</span><b>${word(e.deficit <= 4.5, e.deficit <= 6.5)}</b></div>
+      <h3>Who is happy?</h3>${BLOCS.map(b => { const v = G.gov.approval[b.id]; return `<div class="srow"><span>${b.icon} ${b.name}</span><b>${v >= 55 ? '😀' : v >= 42 ? '😐' : '😠'}</b></div>`; }).join('')}
+      ${G.gov.promises.length ? `<h3>Promises</h3>${G.gov.promises.map(id => `<div class="srow"><span>${PROMISES.find(x => x.id === id).check(G) ? '✅' : '⏳'} ${PROMISES.find(x => x.id === id).name}</span></div>`).join('')}` : ''}
+      <button class="gbtn green" data-a="closemodal">OK</button>`);
+  },
+  allies() {
+    const g = G.gov;
+    openModal(`<h2>🤝 Friends</h2>${g.allies.map(a => `<div class="srow"><span>${a.sat >= 50 ? '😀' : a.sat >= 30 ? '😐' : '😠'} ${esc(a.short)} · ${a.seats} seats</span><button class="gbtn small orange" data-a="pkggo" data-k="${a.key}" ${g.pc < 1 ? 'disabled' : ''}>🎁 1⭐</button></div>`).join('') || '<p>No allies.</p>'}
+      <button class="gbtn green" data-a="closemodal">OK</button>`);
+  },
+  pkggo(d) { const r = allyPackage(d.k); if (r.err) return handle(r); toast('🎁 Your friend is happy!', 'good'); render(); },
+  reelect() { goToElection(false); UI.deal = null; UI.pdeal = null; UI.picked = []; render(); },
+  menu() {
+    openModal(`<h2>Menu</h2><div class="answers">
+      <button class="gbtn blue" data-a="help">📖 How to play</button>
+      ${G && G.phase === 'gov' ? '<button class="gbtn blue" data-a="allies">🤝 My friends</button>' : ''}
+      <button class="gbtn orange" data-a="quit">🏠 Save & exit</button>
+      <button class="gbtn green" data-a="closemodal">▶ Resume</button></div>`);
+  },
+  quit() { save(); UI.screen = 'title'; G = null; render(); },
+};
+
+function welcomePM() {
+  openModal(`<div class="center"><div class="emo">🇮🇳</div><h2>You are Prime Minister!</h2>
+    <p>Ideas will come to you.<br><b>Swipe right = YES</b> · <b>left = NO</b></p>
+    <p>Keep the 4 meters green! 🟩</p><p>Each idea needs ⭐ energy. Happy people give you more.</p><button class="gbtn green" data-a="closemodal">LET'S GO ▶</button></div>`);
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]');
+  if (!el || el.disabled) return;
+  if ($('#popup')) { if (!el.closest('#popup')) return; closeModal(); }
+  ACTIONS[el.dataset.a] && ACTIONS[el.dataset.a](el.dataset);
+});
+
+render();
+</script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
