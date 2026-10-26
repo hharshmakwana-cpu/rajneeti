@@ -194,6 +194,8 @@ const Sound = (() => {
     alarm: () => { shehnai(r(12), .25, { vol: .14, bus: sfxBus }); shehnai(r(13), .25, { at: .25, vol: .14, bus: sfxBus }); shehnai(r(12), .4, { at: .5, vol: .14, bus: sfxBus }); },
     sword: () => { noise(.25, { vol: .3, freq: 5000, to: 1500, q: 4 }); tone(1200, .4, { type: 'triangle', vol: .08, to: 1500 }); },
     tv: () => [0, 4, 7, 12].forEach((n, i) => shehnai(r(n + 12), .14, { at: i * .1, vol: .08, bus: sfxBus })),
+    bus: () => { tone(392, .22, { type: 'square', vol: .07, lp: 1800 }); tone(330, .3, { type: 'square', vol: .07, at: .25, lp: 1800 }); noise(.7, { vol: .1, type: 'lowpass', freq: 300, at: .1, attack: .2 }); },
+    plane: () => { noise(1.1, { vol: .3, freq: 400, to: 2400, q: .8, attack: .4 }); tone(180, 1, { type: 'sawtooth', vol: .03, to: 260, lp: 900 }); },
     whoosh: () => noise(.5, { vol: .28, freq: 300, to: 3000, q: .6, attack: .2 }),
     tick: () => tablaNa(0, .1),
     count: () => { tone(880, .06, { vol: .12 }); },

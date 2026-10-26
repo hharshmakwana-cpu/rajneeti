@@ -97,6 +97,7 @@ function startCampaign({ weeks, funds, first, snap }) {
     ground: {}, groundA: {}, groundB: {}, alliances, affinity, generous: {}, cooldown: {},
     promises: [], social: { youth: 0, middle: 0 }, donorRisk: 0, pressDone: false,
     event: null, polls: [], govAppeal: {},
+    pos: 'DL', rivalPos: 'UP', // where your campaign bus and the RSP leader are on the map
   };
   for (const s of STATES) { G.camp.ground[s.id] = 0; G.camp.groundA[s.id] = 0; G.camp.groundB[s.id] = 0; }
   if (G.gov) {
@@ -300,6 +301,36 @@ function pollSnapshot() {
   return { you: Math.round(p.totals.you), A: Math.round(p.totals.A), youBloc: Math.round(p.youBloc), aBloc: Math.round(p.aBloc), others: Math.round(p.others) };
 }
 
+// ---------- travelling the map ----------
+// Neighbouring tiles on the map grid, plus a few links across gaps.
+const ADJ = (() => {
+  const adj = Object.fromEntries(STATES.map(s => [s.id, new Set()]));
+  for (const a of STATES) for (const b of STATES) {
+    if (a !== b && Math.max(Math.abs(a.pos[0] - b.pos[0]), Math.abs(a.pos[1] - b.pos[1])) <= 1) adj[a.id].add(b.id);
+  }
+  for (const [a, b] of [['AS', 'WB'], ['UT', 'AP'], ['UT', 'OD'], ['UT', 'TN'], ['WB', 'OD']]) { adj[a].add(b); adj[b].add(a); }
+  return adj;
+})();
+
+const FLY_COST = 20;
+
+function travelCost(to) {
+  const C = G.camp;
+  return ADJ[C.pos].has(to) ? { money: 0, mode: 'bus' } : { money: FLY_COST, mode: 'plane' };
+}
+
+function travel(to) {
+  const C = G.camp;
+  if (C.event) return { err: 'Answer the news card first' };
+  if (to === C.pos) return { err: 'You are already here' };
+  if (C.ap < 1) return { err: 'No days left this week' };
+  const cost = travelCost(to);
+  if (C.funds < cost.money) return { err: 'Not enough 💰 money to fly' };
+  C.funds -= cost.money; C.ap--; C.pos = to;
+  save();
+  return { mode: cost.mode };
+}
+
 function campaignAction(id, stateId, opt, power) {
   const a = CAMPAIGN_ACTIONS[id];
   const err = actionBlocked(id, stateId, opt);
@@ -361,7 +392,7 @@ function rivalTurn() {
   for (let i = 0; i < 3; i++) {
     const s = pick(targets), g = C.groundA[s.id];
     C.groundA[s.id] = g + 3.5 * ai * (1 - g / 32);
-    if (!C.rivalMoves.some(m => m.s === s.id)) C.rivalMoves.push({ k: 'rally', s: s.id });
+    if (!C.rivalMoves.some(m => m.s === s.id)) { C.rivalMoves.push({ k: 'rally', s: s.id }); C.rivalPos = s.id; }
   }
   if (rand() < .4) { const s = pick(STATES); C.groundB[s.id] += 2; C.momB += .5; }
   // RSP courts regional parties
@@ -678,7 +709,7 @@ function stateApproval(id) {
 
 function startQuarter() {
   const g = G.gov;
-  g.prDone = false; g.rbiDone = false; g.reshuffleDone = false;
+  g.prDone = false; g.rbiDone = false; g.reshuffleDone = false; g.fixDone = false;
   g.events = [];
   dealHand();
   // scheduled events

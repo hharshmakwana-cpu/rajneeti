@@ -116,58 +116,106 @@ function helpHTML() {
 }
 
 // ---------------- campaign ----------------
-function dealCampaign() {
-  const C = G.camp, cards = [];
-  const sh = s => stateShares(s);
-  const battle = STATES.filter(s => s.seats >= 10).map(s => { const x = sh(s); return { s, v: s.seats * (1.2 - Math.abs(x[0] - x[1])) * (1 + rand() * .6) }; }).sort((a, b) => b.v - a.v);
-  if (C.funds >= 15) cards.push({ k: 'rally', s: battle[0].s.id });
-  const allies = STATES.filter(s => s.reg && C.alliances[s.id] !== 'you' && !actionBlocked('alliance', s.id))
-    .map(s => ({ s, v: allianceChance(s.id) * s.seats * (1 + rand() * .8) })).sort((a, b) => b.v - a.v);
-  if (allies.length) cards.push({ k: 'alliance', s: allies[0].s.id });
-  if (C.funds < 40) cards.push({ k: 'fundraise' });
-  else cards.push({ k: rand() < .65 ? 'ads' : 'attack' });
-  if (cards.length < 3 && !cards.some(c => c.k === 'fundraise')) cards.push({ k: 'fundraise' });
-  if (cards.length < 3 && C.funds >= 15) cards.push({ k: 'rally', s: battle[1].s.id });
-  UI.deal = cards;
-  Sound.play('deal');
-}
-
-function moveCard(c, i) {
-  const s = c.s ? stateById(c.s) : null;
-  let icon, title, sub, badge;
-  if (c.k === 'rally') { icon = '📣'; title = `Big rally in ${s.name}`; sub = `🎮 Tap game · ${s.seats} seats`; badge = '💰15'; }
-  if (c.k === 'alliance') { const ch = allianceChance(s.id); icon = '🤝'; title = `Make friends in ${s.name}`; sub = `🎮 Timing game · ${s.seats} seats`; badge = ch >= .5 ? 'Easy 😀' : ch >= .25 ? 'Maybe 🤞' : 'Hard 😬'; }
-  if (c.k === 'ads') { icon = '📺'; title = 'Ads on TV'; sub = 'Everyone sees you'; badge = '💰40'; }
-  if (c.k === 'attack') { icon = '⚔️'; title = 'Show RSP mistakes'; sub = 'Can go wrong!'; badge = '💰10'; }
-  if (c.k === 'fundraise') { icon = '💰'; title = 'Collect money'; sub = '🎮 Catch the coins'; badge = 'FREE'; }
-  const blocked = actionBlocked(c.k, c.s);
-  return `<button class="mcard" data-a="move" data-i="${i}" ${blocked ? 'disabled' : ''} style="animation-delay:${i * 90}ms">
-    <span class="mi">${icon}</span><span class="mt"><b>${title}</b><small>${sub}</small></span><span class="badge">${badge}</span></button>`;
-}
-
 function livePoll() { return UI.live || G.camp.polls[G.camp.polls.length - 1]; }
 
-function weekPath() {
+// ---- the campaign board: a map of India you travel across ----
+function stateResult(id) {
+  const r = UI.proj.byState[id], al = G.camp.alliances[id];
+  return { you: Math.round(r.you + (al === 'you' ? r.R : 0)), them: Math.round(r.A + (al === 'A' ? r.R : 0)) };
+}
+
+function boardMap() {
   const C = G.camp;
-  return `<div class="path">${Array.from({ length: C.weeks }, (_, i) => `<i class="${i + 1 < C.week ? 'done' : i + 1 === C.week ? 'now' : ''}">${i + 1 === C.weeks ? '🗳️' : ''}</i>`).join('')}</div>`;
+  return `<div class="board-map">${STATES.map(s => {
+    const x = stateResult(s.id);
+    let col = '#9ca3af';
+    if (x.you > x.them) col = C.alliances[s.id] === 'you' && UI.proj.byState[s.id].R > UI.proj.byState[s.id].you ? mix(G.color) : G.color;
+    else if (x.them > x.you) col = RIVALS.A.color;
+    const close = Math.abs(x.you - x.them) <= Math.max(2, s.seats * .25) && s.seats >= 10;
+    const here = s.id === C.pos, near = ADJ[C.pos].has(s.id), sel = s.id === UI.sel;
+    return `<button class="bt ${here ? 'here' : ''} ${near ? 'near' : ''} ${sel ? 'sel' : ''}" style="grid-column:${s.pos[0] + 1};grid-row:${s.pos[1] + 1};--c:${col}" data-a="sel" data-s="${s.id}">
+      <b>${s.id}</b><small>${s.seats}</small>${close ? '<i class="fight">⚔️</i>' : ''}${C.alliances[s.id] === 'you' ? '<i class="pal">🤝</i>' : ''}</button>`;
+  }).join('')}
+  <span class="token me" style="background:${G.color}">${G.symbol}</span><span class="token rival">${RIVAL_FACE}</span></div>`;
+}
+
+function mix(c) { return `color-mix(in srgb, ${c} 55%, #ffffff)`; }
+
+function dayDots() {
+  const C = G.camp;
+  return `<span class="days">${'☀️'.repeat(C.ap)}${'<i>☀️</i>'.repeat(C.apMax - C.ap)}</span>`;
+}
+
+function actionBtn(k, label, sub, icon, cls = '') {
+  const C = G.camp;
+  const blocked = actionBlocked(k, k === 'rally' || k === 'alliance' ? C.pos : undefined);
+  return `<button class="act ${cls}" data-a="act" data-k="${k}" ${blocked ? 'disabled' : ''}><span class="mi">${icon}</span><b>${label}</b><small>${sub}</small></button>`;
+}
+
+function hereTray() {
+  const C = G.camp, s = stateById(C.pos), x = stateResult(s.id), al = C.alliances[s.id];
+  let friend = '';
+  if (s.reg && al !== 'you') {
+    const ch = allianceChance(s.id);
+    friend = actionBtn('alliance', 'Make friends', ch >= .5 ? 'Easy 😀' : ch >= .25 ? 'Maybe 🤞' : 'Hard 😬', '🤝');
+  } else if (s.reg) friend = `<div class="act done"><span class="mi">✅</span><b>${s.reg.short}</b><small>Your friend</small></div>`;
+  return `<div class="trayhead"><b>📍 ${s.name}</b>${dayDots()}</div>
+    <div class="vs"><span style="color:${G.color}">You ${x.you}</span><span>of ${s.seats} seats</span><span style="color:${RIVALS.A.color}">RSP ${x.them}</span></div>
+    <div class="acts">${actionBtn('rally', 'Rally', '💰15 · 🎮', '📣')}${friend}${actionBtn('fundraise', 'Money', 'FREE · 🎮', '💰')}${actionBtn('ads', 'TV ads', '💰40', '📺')}</div>
+    <p class="hint">👆 Tap a state on the map to travel there</p>`;
+}
+
+function travelTray(id) {
+  const C = G.camp, s = stateById(id), x = stateResult(id), cost = travelCost(id);
+  const can = C.ap > 0 && C.funds >= cost.money;
+  return `<div class="trayhead"><b>${s.name}</b><button class="x" data-a="sel" data-s="">✕</button></div>
+    <div class="vs"><span style="color:${G.color}">You ${x.you}</span><span>of ${s.seats} seats</span><span style="color:${RIVALS.A.color}">RSP ${x.them}</span></div>
+    <button class="gbtn ${cost.mode === 'bus' ? 'green' : 'blue'} big glow" data-a="go" ${can ? '' : 'disabled'}>${cost.mode === 'bus' ? '🚌 Go by bus · 1 day' : `✈️ Fly · 1 day · 💰${cost.money}`}</button>
+    <p class="hint">${can ? (cost.mode === 'bus' ? 'Next door — the bus is free!' : 'Far away — flying costs money') : C.ap ? 'Not enough money to fly' : 'No days left this week'}</p>`;
 }
 
 function renderCampaign() {
   const C = G.camp;
   const last = livePoll();
   if (!C.manifestoDone && !C.promises.length) return renderManifesto(last);
-  if (!UI.deal) dealCampaign();
+  if (!C.pos) { C.pos = 'DL'; C.rivalPos = 'UP'; } // saves from before the map board
+  if (!UI.proj) UI.proj = projection(12);
   const ev = C.event && CAMPAIGN_EVENTS.find(e => e.id === C.event.id);
+  const sel = UI.sel && UI.sel !== C.pos ? UI.sel : null;
   return `<div class="screen">
-    ${topbar([`📅 Week ${C.week}`, `💰 <b class="money">${Math.round(C.funds)}</b>`])}
-    ${weekPath()}
+    ${topbar([`📅 Week ${C.week}/${C.weeks}`, `💰 <b class="money">${Math.round(C.funds)}</b>`])}
     ${tug(last.youBloc, last.aBloc)}
     ${ev ? eventCard(ev, C.event.ctx, 'cev') : `
-    <div class="stage">
-      <p class="prompt">Pick one! <span class="dots">${'●'.repeat(C.ap)}${'○'.repeat(C.apMax - C.ap)}</span></p>
-      <div class="mcards">${UI.deal.map(moveCard).join('')}</div>
-    </div>`}
+    <div class="board">${boardMap()}</div>
+    <div class="tray">${sel ? travelTray(sel) : hereTray()}</div>`}
   </div>`;
+}
+
+// put the two leaders on their map tiles
+function placeTokens(animate = false) {
+  const map = $('.board-map');
+  if (!map || !G.camp) return;
+  const put = (cls, id) => {
+    const t = map.querySelector('.token.' + cls), tile = map.querySelector(`.bt[data-s="${id}"]`);
+    if (!t || !tile) return;
+    if (!animate) t.style.transition = 'none';
+    t.style.left = (tile.offsetLeft + tile.offsetWidth / 2) + 'px';
+    t.style.top = (tile.offsetTop + tile.offsetHeight / 2) + 'px';
+    if (!animate) { void t.offsetWidth; t.style.transition = ''; }
+  };
+  put('me', G.camp.pos); put('rival', G.camp.rivalPos);
+}
+
+function moveToken(cls, id, ms = 700) {
+  const map = $('.board-map');
+  if (!map) return wait(0);
+  const t = map.querySelector('.token.' + cls), tile = map.querySelector(`.bt[data-s="${id}"]`);
+  if (!t || !tile) return wait(0);
+  t.style.transition = `left ${ms}ms cubic-bezier(.5,0,.3,1), top ${ms}ms cubic-bezier(.5,0,.3,1)`;
+  t.classList.add('moving');
+  t.style.left = (tile.offsetLeft + tile.offsetWidth / 2) + 'px';
+  t.style.top = (tile.offsetTop + tile.offsetHeight / 2) + 'px';
+  return wait(ms).then(() => t.classList.remove('moving'));
 }
 
 function renderManifesto(last) {
@@ -320,6 +368,7 @@ function renderGov() {
   let stage;
   if (ev) stage = eventCard(GOV_EVENTS.find(x => x.id === ev.id), ev.ctx, 'gev');
   else if (budgetDue) stage = budgetStage();
+  else if (!g.fixDone) stage = fixStage();
   else if (!g.played && UI.card < g.hand.length) stage = ideaStage(g.hand[UI.card]);
   else stage = `<div class="stage"><div class="bigcard"><div class="emo spin">⏳</div><h2>Time passes…</h2></div></div><div class="bottom"><button class="gbtn green big glow" data-a="endq">NEXT ▶</button></div>`;
   return `<div class="screen">
@@ -327,6 +376,27 @@ function renderGov() {
     ${meters()}
     ${stage}
   </div>`;
+}
+
+function fixStage() {
+  const g = G.gov, level = 1 + Math.floor(g.q / 2);
+  return `<div class="stage">
+    <div class="bigcard flipin"><div class="kicker">Turn ${level} of 10</div><div class="emo wobble">🇮🇳</div><h2>Fix India!</h2>
+      <p>Problems are popping up all over the country. Tap them fast before they blow up!</p>
+      <div class="fans"><span class="like">🔥🌊🧅✊🌾🚧</span><span class="like">⭐ = energy</span></div></div>
+    <button class="gbtn green big glow pop-in" data-a="fix">GO! ▶</button>
+  </div>`;
+}
+
+async function playFixIndia() {
+  const g = G.gov, level = 1 + Math.floor(g.q / 2) + (G.eco.deficit > 6 ? 1 : 0) + (G.eco.infl > 6 ? 1 : 0);
+  const res = await Mini.fixIndia(level);
+  // fixed problems cheer people up; missed ones anger the group they hit
+  for (const [b, x] of Object.entries(res.byBloc)) mod(b, x.fixed * 1.2 - x.missed * 1.8);
+  g.pc = Math.min(15, g.pc + res.stars);
+  g.fixDone = true;
+  save();
+  render();
 }
 
 function budgetStage() {
@@ -416,6 +486,7 @@ function render() {
   else html = renderGameOver();
   $('#view').innerHTML = html;
   bindSwipe();
+  placeTokens();
   FX.sky($('.sky'));
   animateTug(G && G.phase === 'results' ? 200 : 800);
   animateMeters();
@@ -489,45 +560,48 @@ function moodSnapshot() {
   return 0;
 }
 
-async function campaignMove(i, btn) {
-  const c = UI.deal[i], C = G.camp, s = c.s && stateById(c.s);
-  const before = livePoll().youBloc, trust0 = G.trust;
-  // the chosen card pops forward, the others slide away
-  document.querySelectorAll('.mcard').forEach(el => el.classList.add(el === btn ? 'picked' : 'away'));
-  buzz(15);
-  await wait(380);
-  // three of the moves are played as quick finger games
+async function travelTo(id) {
+  const cost = travelCost(id);
+  const r = travel(id);
+  if (r.err) return handle(r);
+  UI.sel = null;
+  Sound.play(r.mode === 'bus' ? 'bus' : 'plane');
+  // engine already moved; animate the token from the old tile to the new one
+  await moveToken('me', id, r.mode === 'bus' ? 800 : 1100);
+  if (cost.money) { const m = $('.money'); if (m) FX.countUp(m, Math.round(G.camp.funds + cost.money), Math.round(G.camp.funds), 500); }
+  if (G.camp.ap === 0) return endOfWeek();
+  render();
+}
+
+async function campaignMove(k, btn) {
+  const C = G.camp, s = stateById(C.pos);
+  const before = livePoll().youBloc, trust0 = G.trust, funds0 = C.funds;
+  btn.classList.add('chosen'); buzz(15);
+  await wait(200);
   let power;
-  const funds0 = C.funds;
-  if (c.k === 'rally') power = await Mini.rally(s.name);
-  if (c.k === 'alliance') power = await Mini.handshake(s.reg.short, allianceChance(c.s));
-  if (c.k === 'fundraise') power = await Mini.coins();
-  const r = campaignAction(c.k, c.s, false, power);
-  if (r.err) { UI.deal = null; return handle(r); }
-  UI.live = pollSnapshot();
+  if (k === 'rally') power = await Mini.rally(s.name);
+  if (k === 'alliance') power = await Mini.handshake(s.reg.short, allianceChance(s.id));
+  if (k === 'fundraise') power = await Mini.coins();
+  const r = campaignAction(k, k === 'rally' || k === 'alliance' ? s.id : undefined, false, power);
+  if (r.err) return handle(r);
+  UI.live = pollSnapshot(); UI.proj = null;
   const gain = UI.live.youBloc - before, seats = gain > 0 ? `+${gain} seats!` : '';
-  if (c.k === 'rally') {
+  if (k === 'rally') {
     Sound.chant(`${G.leader.split(' ')[0]} ज़िंदाबाद! ज़िंदाबाद!`);
     await FX.burst('📣', `${G.leader.split(' ')[0]} Zindabad!`, 'good', seats || '🙌 People love you');
   }
-  if (c.k === 'alliance') {
-    if (C.alliances[c.s] === 'you') { Sound.play('win'); await FX.burst('🎉', `${s.reg.short} is your friend!`, 'good', seats || `${s.name} is with you`); }
+  if (k === 'alliance') {
+    if (C.alliances[s.id] === 'you') { Sound.play('win'); await FX.burst('🎉', `${s.reg.short} is your friend!`, 'good', seats || `${s.name} is with you`); }
     else { Sound.play('bad'); await FX.burst('😕', 'They said no…', 'bad', 'Try again later'); }
   }
-  if (c.k === 'ads') { Sound.play('tv'); await FX.burst('📺', 'Everyone saw your ad!', 'good', seats); }
-  if (c.k === 'fundraise') {
+  if (k === 'ads') { Sound.play('tv'); await FX.burst('📺', 'Everyone saw your ad!', 'good', seats); }
+  if (k === 'fundraise') {
     const money = $('.money');
     await FX.fly('🪙', btn, money, 8);
     if (money) { FX.countUp(money, Math.round(funds0), Math.round(C.funds), 600); money.parentElement.classList.add('hop'); }
   }
-  if (c.k === 'attack') {
-    Sound.play('sword');
-    await wait(250);
-    if (G.trust < trust0) { Sound.play('bad'); await FX.burst('😬', 'Oops! That went wrong.', 'bad'); }
-    else { Sound.play('good'); await FX.burst('⚔️', 'RSP looks bad!', 'good', seats); }
-  }
-  UI.deal = null;
-  if (G.camp.ap === 0) return endOfWeek();
+  if (G.trust < trust0 && k === 'attack') { Sound.play('bad'); await FX.burst('😬', 'Oops! That went wrong.', 'bad'); }
+  if (C.ap === 0) return endOfWeek();
   render();
 }
 
@@ -535,6 +609,7 @@ async function endOfWeek() {
   const C = G.camp;
   const before = livePoll();
   const w = endWeek();
+  UI.proj = null;
   if (w.err) return toast(w.err, 'bad');
   if (w.election) {
     UI.live = null; UI.reveal = null; UI.tugPrev = null;
@@ -552,7 +627,14 @@ async function endOfWeek() {
     return '';
   };
   const hurt = moves.some(m => m.k === 'ally' || m.k === 'steal');
-  Sound.play('down');
+  // show the RSP leader travelling to each state it campaigned in
+  for (const m of moves.filter(m => m.s)) {
+    Sound.play('down');
+    await moveToken('rival', m.s, 650);
+    const tile = $(`.bt[data-s="${m.s}"]`);
+    if (tile) { tile.classList.add('hit'); FX.floatText(tile, m.k === 'rally' ? '📣' : '🤝', '#fff'); }
+    await wait(350);
+  }
   await FX.burst(RIVAL_FACE, "RSP's turn!", hurt ? 'bad' : 'rival', moves.map(line).join('<br>') || 'RSP is planning…');
   UI.live = null;
   const after = livePoll(), d = after.youBloc - before.youBloc;
@@ -587,14 +669,14 @@ async function answerEvent(kind, i, btn) {
   if (r.err) { btn.classList.remove('chosen'); return toast(r.err, 'bad'); }
   buzz(15);
   if (r.phaseChange || G.phase !== (isGov ? 'gov' : 'campaign')) {
-    UI.deal = null; UI.pdeal = null; UI.picked = []; UI.live = null; UI.tugPrev = null; UI.meterPrev = null;
+    UI.deal = null; UI.proj = null; UI.pdeal = null; UI.picked = []; UI.live = null; UI.tugPrev = null; UI.meterPrev = null;
     await FX.burst('🗳️', r.msg, 'bad');
     return render();
   }
   const good = moodSnapshot() >= m0;
   Sound.play(good ? 'good' : 'bad');
   await FX.burst(good ? icon : '😬', r.msg, good ? 'good' : 'bad');
-  if (!isGov) { UI.deal = null; UI.live = pollSnapshot(); }
+  if (!isGov) { UI.proj = null; UI.live = pollSnapshot(); }
   render();
 }
 
@@ -665,7 +747,7 @@ async function coalitionOffer(key, offer, btn) {
 
 const ACTIONS = {
   tapstart() { UI.started = true; Sound.play('go'); render(); },
-  continue() { if (load()) { UI.screen = 'game'; UI.deal = null; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null; render(); } },
+  continue() { if (load()) { UI.screen = 'game'; UI.deal = null; UI.proj = null; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null; render(); } },
   newgame() { UI.setup = { leader: '', symbol: PARTY_SYMBOLS[0], color: PARTY_COLORS[0] }; UI.screen = 'setup'; G = null; render(); },
   help() { openModal(helpHTML()); },
   closemodal() { closeModal(); },
@@ -674,13 +756,16 @@ const ACTIONS = {
     const name = ($('#f-leader').value || '').trim() || 'Asha Verma';
     const s = UI.setup;
     newGame({ leader: name, party: 'Jan Shakti Party', short: 'JSP', symbol: s.symbol, color: s.color, ideology: 'centrist', difficulty: 'normal' });
-    UI.screen = 'game'; UI.reveal = null; UI.deal = null; UI.pdeal = null; UI.picked = []; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null;
+    UI.screen = 'game'; UI.reveal = null; UI.deal = null; UI.proj = null; UI.pdeal = null; UI.picked = []; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null;
     render();
     let seen = false; try { seen = !!localStorage.getItem('rajneeti.seenHelp'); localStorage.setItem('rajneeti.seenHelp', '1'); } catch (e) { /* ignore */ }
     if (!seen) openModal(helpHTML());
   },
   promise(d, el) { run(() => choosePromise(d.id, el)); },
-  move(d, el) { run(() => campaignMove(+d.i, el)); },
+  fix() { run(playFixIndia); },
+  act(d, el) { run(() => campaignMove(d.k, el)); },
+  go() { if (UI.sel) run(() => travelTo(UI.sel)); },
+  sel(d) { buzz(8); Sound.play('tap'); UI.sel = d.s && d.s !== (G.camp && G.camp.pos) ? d.s : null; render(); },
   cev(d, el) { run(() => answerEvent('cev', +d.i, el)); },
   gev(d, el) { run(() => answerEvent('gev', +d.i, el)); },
   skipreveal() {
@@ -714,7 +799,7 @@ const ACTIONS = {
       <button class="gbtn green" data-a="closemodal">OK</button>`);
   },
   pkggo(d) { const r = allyPackage(d.k); if (r.err) return handle(r); Sound.play('good'); toast('🎁 Your friend is happy!', 'good'); render(); },
-  reelect() { goToElection(false); UI.deal = null; UI.pdeal = null; UI.picked = []; UI.live = null; UI.tugPrev = null; render(); },
+  reelect() { goToElection(false); UI.deal = null; UI.proj = null; UI.pdeal = null; UI.picked = []; UI.live = null; UI.tugPrev = null; render(); },
   menu() {
     openModal(`<h2>Menu</h2><div class="answers">
       <button class="gbtn blue" data-a="soundmenu">🔊 Sound</button>

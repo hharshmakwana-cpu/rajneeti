@@ -175,5 +175,70 @@ const Mini = (() => {
     return mult;
   }
 
-  return { rally, handshake, coins };
+  // ---- FIX INDIA: tap problems on the map before they blow up ----
+  const PROBLEMS = [
+    { icon: '🔥', bloc: 'poor' }, { icon: '🌊', bloc: 'poor' }, { icon: '🤒', bloc: 'poor' },
+    { icon: '🧅', bloc: 'middle' }, { icon: '🚧', bloc: 'middle' }, { icon: '✊', bloc: 'workers' },
+    { icon: '🌾', bloc: 'farmers' }, { icon: '🎓', bloc: 'youth' }, { icon: '🏭', bloc: 'business' },
+  ];
+  async function fixIndia(level = 1) {
+    const el = overlay('fix', `
+      <div class="mg-head"><b>🇮🇳 Fix India!</b><span>Tap problems before they blow up 💥 · ⭐ gives energy</span></div>
+      <div class="mg-score">Fixed: <b>0</b> · Missed: <i>0</i></div>
+      <div class="mg-time"><i></i></div>
+      <div class="fixmap">${STATES.map(st => `<button class="ft" data-s="${st.id}" style="grid-column:${st.pos[0] + 1};grid-row:${st.pos[1] + 1}"><small>${st.id}</small><span></span></button>`).join('')}</div>
+      <div class="mg-count"></div><div class="mg-end" hidden></div>`);
+    await countdown(el);
+    const tiles = [...el.querySelectorAll('.ft')], fixedEl = el.querySelector('.mg-score b'), missEl = el.querySelector('.mg-score i');
+    const res = { fixed: 0, missed: 0, stars: 0, byBloc: {} };
+    const tally = (b, k) => { res.byBloc[b] = res.byBloc[b] || { fixed: 0, missed: 0 }; res.byBloc[b][k]++; };
+    let live = true;
+    const life = Math.max(1800, 2900 - level * 120);
+    const spawn = () => {
+      if (!live) return;
+      const free = tiles.filter(t => !t.dataset.p);
+      if (free.length) {
+        const t = free[Math.floor(Math.random() * free.length)];
+        const star = Math.random() < .1, pr = star ? null : PROBLEMS[Math.floor(Math.random() * PROBLEMS.length)];
+        t.dataset.p = star ? 'star' : pr.bloc;
+        t.querySelector('span').textContent = star ? '⭐' : pr.icon;
+        t.classList.remove('boom', 'ok'); t.classList.add('on');
+        t.style.setProperty('--life', life + 'ms');
+        t._timer = setTimeout(() => {
+          if (!t.dataset.p) return;
+          const b = t.dataset.p;
+          delete t.dataset.p; t.classList.remove('on');
+          if (b !== 'star') { res.missed++; tally(b, 'missed'); missEl.textContent = res.missed; t.classList.add('boom'); Sound.play('oops'); }
+          t.querySelector('span').textContent = b === 'star' ? '' : '💥';
+          setTimeout(() => { if (!t.dataset.p) { t.querySelector('span').textContent = ''; t.classList.remove('boom'); } }, 500);
+        }, life);
+      }
+      setTimeout(spawn, Math.max(330, 700 - level * 30 - res.fixed * 6));
+    };
+    tiles.forEach(t => t.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      const b = t.dataset.p;
+      if (!live || !b) return;
+      clearTimeout(t._timer);
+      delete t.dataset.p; t.classList.remove('on'); t.classList.add('ok');
+      if (b === 'star') { res.stars++; FX.floatText(t, '+⭐', '#ffd166'); Sound.play('coin'); }
+      else { res.fixed++; tally(b, 'fixed'); fixedEl.textContent = res.fixed; FX.floatText(t, '✅', '#16a34a'); Sound.play('pop'); }
+      navigator.vibrate && navigator.vibrate(8);
+      t.querySelector('span').textContent = '✨';
+      setTimeout(() => { if (!t.dataset.p) { t.querySelector('span').textContent = ''; t.classList.remove('ok'); } }, 350);
+    }));
+    el.querySelector('.mg-time i').style.animationDuration = '15s';
+    el.classList.add('running');
+    spawn(); setTimeout(spawn, 250);
+    await wait(15000);
+    live = false;
+    tiles.forEach(t => clearTimeout(t._timer));
+    const total = res.fixed + res.missed, pct = total ? res.fixed / total : 1;
+    const s = pct >= .85 ? 3 : pct >= .6 ? 2 : 1;
+    Sound.play(s >= 2 ? 'good' : 'bad');
+    await finish(el, s === 3 ? '🦸' : s === 2 ? '😀' : '😓', `Fixed ${res.fixed} of ${total}! ${stars(s)}`, s === 3 ? 'Super PM!' : s === 2 ? 'Good work!' : 'India needs you faster!');
+    return res;
+  }
+
+  return { rally, handshake, coins, fixIndia };
 })();

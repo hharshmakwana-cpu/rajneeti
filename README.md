@@ -11,10 +11,10 @@ An offline, single-player Indian political strategy game. Lead an opposition par
 Progress auto-saves in the browser. Tap 🔊 to mute, or open ☰ → Sound for separate game-sound and music volume.
 
 ## Game phases
-1. **Campaign (10 weeks):** pick 3 promises, then pick 1 of 3 move cards, three times a week. Rallies, making friends with local parties and collecting money are quick finger mini-games (tap the fans, stop the needle in the green, catch the coins). The RSP takes its own turn every week.
+1. **Campaign (10 weeks):** pick 3 promises, then ride your campaign bus across a map of India. Each week has 3 days: travel (bus to a neighbouring state is free, flying far costs money) or act where you are. Rallies, making friends with local parties and collecting money are finger mini-games. The RSP leader moves on the map too.
 2. **Counting day:** seat-by-seat first-past-the-post results.
 3. **Hung parliament:** win kingmakers over by asking, offering a minister's post, or offering money for their state.
-4. **Prime Minister (10 turns, each half a year):** each turn, answer any news card and swipe idea cards (right = yes, left = no). Once a year on Money Day, choose a budget. Keep the four meters green: Happy, Jobs, Prices, Savings.
+4. **Prime Minister (10 turns, each half a year):** each turn, play a 15-second Fix India! round (tap problems on the map before they blow up), answer any news card and swipe idea cards (right = yes, left = no). Once a year on Money Day, choose a budget. Keep the four meters green: Happy, Jobs, Prices, Savings.
 5. **Re-election:** your approval in each state becomes your starting position, and broken promises cost trust.
 
 ## Develop
