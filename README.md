@@ -18,4 +18,4 @@ Progress auto-saves in the browser. Tap 🔊 to mute, or open ☰ → Sound for 
 5. **Re-election:** your approval in each state becomes your starting position, and broken promises cost trust.
 
 ## Develop
-Source is in `src/` (`data.js` content, `events.js` event cards, `engine.js` rules/economy, `ui.js` interface, `sound.js` synthesised sound effects and music). Open `src/index.html` directly while editing, then run `node build.js` to regenerate `dist/`.
+Source is in `src/` (`data.js` content, `events.js` event cards, `engine.js` rules/economy, `ui.js` interface, `sound.js` synthesised sound effects and music, `fx.js` confetti, bursts, banners and other effects). Open `src/index.html` directly while editing, then run `node build.js` to regenerate `dist/`.

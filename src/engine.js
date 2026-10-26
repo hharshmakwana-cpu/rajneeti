@@ -353,13 +353,15 @@ function addPromise(id) {
 
 function rivalTurn() {
   const C = G.camp, ai = DIFFICULTY[G.difficulty].rivalAI;
+  C.rivalMoves = []; // what the RSP did this week, shown to the player
   // RSP targets the states where you are closest to overtaking them
-  if (rand() < .6) C.momA += 1.6 * ai;
+  if (rand() < .6) { C.momA += 1.6 * ai; C.rivalMoves.push({ k: 'ads' }); }
   // RSP counters wherever you have been investing, weighted by seats
   const targets = STATES.slice().sort((a, b) => (C.ground[b.id] + 2) * b.seats - (C.ground[a.id] + 2) * a.seats).slice(0, 4);
   for (let i = 0; i < 3; i++) {
     const s = pick(targets), g = C.groundA[s.id];
     C.groundA[s.id] = g + 3.5 * ai * (1 - g / 32);
+    if (!C.rivalMoves.some(m => m.s === s.id)) C.rivalMoves.push({ k: 'rally', s: s.id });
   }
   if (rand() < .4) { const s = pick(STATES); C.groundB[s.id] += 2; C.momB += .5; }
   // RSP courts regional parties
@@ -370,6 +372,7 @@ function rivalTurn() {
       const proj = C.polls[C.polls.length - 1];
       if (rand() < .6 * (1 - C.affinity[s.id]) + (proj ? (proj.A - proj.you) / 600 : 0)) {
         C.alliances[s.id] = 'A';
+        C.rivalMoves.push({ k: 'ally', s: s.id });
         log(`⚠️ The ${s.reg.short} (${s.name}) has allied with the RSP.`, 'bad');
       }
     }
@@ -379,6 +382,7 @@ function rivalTurn() {
     if (mine.length) {
       const s = pick(mine);
       C.alliances[s.id] = 'A'; delete C.generous[s.id];
+      C.rivalMoves.push({ k: 'steal', s: s.id });
       log(`💔 The RSP poached your ally ${s.reg.short} in ${s.name}!`, 'bad');
     }
   }
