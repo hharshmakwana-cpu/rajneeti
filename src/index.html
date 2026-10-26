@@ -7,22 +7,27 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ff9a3c">
-<meta name="description" content="Rajneeti: an offline Indian political strategy game. Win the Lok Sabha and govern as Prime Minister.">
+<meta name="description" content="Rajneeti: build your party in a 3D town, win elections and become Prime Minister. Plays offline.">
 <title>Rajneeti: Path to Power</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app"><div id="view"></div></div>
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="data.js"></script>
-<script src="events.js"></script>
-<script src="engine.js"></script>
-<script src="fx.js"></script>
+<div id="app">
+  <div id="world"></div>
+  <div id="bubbles"></div>
+  <div id="hud" hidden></div>
+  <div id="screen"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="vendor/three.min.js"></script>
 <script src="sound.js"></script>
-<script src="minigames.js"></script>
-<script src="ui.js"></script>
+<script src="fx.js"></script>
+<script src="game.js"></script>
+<script src="models.js"></script>
+<script src="world.js"></script>
+<script src="hud.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js');
 </script>

@@ -1,23 +1,24 @@
-# Rajneeti: Path to Power
+# Rajneeti
 
-An offline, single-player Indian political strategy game. Lead an opposition party to victory in the Lok Sabha, govern as Prime Minister for five years, then fight for re-election. All parties and leaders are fictional.
+A 3D party-building game for phones. Build your party's town, collect voters and money, win elections and rise from Party Worker to Prime Minister. Plays offline. All parties and people are fictional.
 
-## Play
-**Online:** https://hharshmakwana-cpu.github.io/rajneeti/
+**Play:** https://hharshmakwana-cpu.github.io/rajneeti/ (or open `dist/index.html`). Add it to your phone's home screen to play like an app.
 
-- **Quickest:** open `dist/index.html` in any browser. It's one self-contained file with no internet needed.
-- **Install on a phone:** host the `dist/` folder on any static host (GitHub Pages, Netlify), open it, and choose "Add to Home Screen". The service worker caches it for offline play.
-
-Progress auto-saves in the browser. Tap 🔊 to mute, or open ☰ → Sound for separate game-sound and music volume.
-
-## Game phases
-1. **Campaign (10 weeks):** pick 3 promises, then ride your campaign bus across a map of India. Each week has 3 days: travel (bus to a neighbouring state is free, flying far costs money) or act where you are. Rallies, making friends with local parties and collecting money are finger mini-games. The RSP leader moves on the map too.
-2. **Counting day:** seat-by-seat first-past-the-post results.
-3. **Hung parliament:** win kingmakers over by asking, offering a minister's post, or offering money for their state.
-4. **Prime Minister (10 turns, each half a year):** each turn, play a 15-second Fix India! round (tap problems on the map before they blow up), answer any news card and swipe idea cards (right = yes, left = no). Once a year on Money Day, choose a budget. Keep the four meters green: Happy, Jobs, Prices, Savings.
-5. **Re-election:** your approval in each state becomes your starting position, and broken promises cost trust.
+## How it plays
+- **Build** a Chai Stall, Donation Box, Poster Press, Party Fund Bank, Rally Ground, TV Tower, Karyakarta Bhavan (more workers), trees and flags around your Party Office.
+- Buildings **produce voters 🗳️ or money 💰 over time**. Tap the bubble above a building to collect. Work continues while the game is closed.
+- **Upgrade** buildings for more output. Your Party Office level sets how many buildings you may have.
+- When the ring on the 🗳️ button is full, **fight an election** against the RSP: tap to cheer, watch the count, win to rise one rank and unlock new buildings and more land.
+- **Road to Delhi:** Party Worker → Ward Member → Mayor → MLA → Chief Minister → Member of Parliament → Prime Minister.
+- An **RSP jeep** sometimes drives through town. Tap it to chase it away for coins, or it takes some of your voters.
 
 ## Develop
-Source is in `src/` (`data.js` content, `events.js` event cards, `engine.js` rules/economy, `ui.js` interface, `sound.js` synthesised sound effects and music, `fx.js` confetti, bursts, banners and other effects, `minigames.js` the rally, handshake and coin games)
+Source is in `src/`:
+- `game.js` rules, economy and saving
+- `models.js` low-poly 3D buildings made from simple shapes
+- `world.js` the 3D town, camera, people and the jeep
+- `hud.js` buttons, shop, bubbles, elections, tutorial
+- `sound.js` synthesised Indian music and sound effects; `fx.js` confetti and banners
+- `vendor/three.min.js` three.js r149 (MIT licence, bundled so the game works offline)
 
-Music is Indian in style and synthesised in the browser: dhol bhangra beats with tumbi and shehnai for the campaign, a sitar and tabla in Raag Yaman while governing, and a shehnai over a tanpura drone on the title screen.. Open `src/index.html` directly while editing, then run `node build.js` to regenerate `dist/`.
+Run `node build.js` to produce the single-file game in `dist/`. The earlier 2D version is in `legacy/`.

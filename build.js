@@ -11,7 +11,7 @@ fs.mkdirSync(dist, { recursive: true });
 const read = f => fs.readFileSync(path.join(src, f), 'utf8');
 let html = read('index.html');
 html = html.replace('<link rel="stylesheet" href="style.css">', () => `<style>\n${read('style.css')}</style>`);
-html = html.replace(/<script src="([\w.]+)"><\/script>/g, (_, f) => `<script>\n${read(f)}</script>`);
+html = html.replace(/<script src="([\w./-]+)"><\/script>/g, (_, f) => `<script>\n${read(f)}</script>`);
 fs.writeFileSync(path.join(dist, 'index.html'), html);
 for (const f of ['sw.js', 'manifest.json', 'icon.svg']) fs.copyFileSync(path.join(src, f), path.join(dist, f));
 console.log(`dist/index.html ${(html.length / 1024).toFixed(0)} KB`);
