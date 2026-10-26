@@ -1,13 +1,16 @@
-// RAJNEETI — sound effects and music, synthesised with Web Audio so the game
-// needs no audio files and keeps working offline.
+// RAJNEETI — Indian-style sound and music, synthesised with Web Audio so the
+// game needs no audio files and keeps working offline.
+// Instruments: dhol, dholak/tabla, manjira, tumbi and sitar (plucked strings),
+// shehnai, harmonium and tanpura drone. Rally chants use the device's voice.
 
 const Sound = (() => {
   const KEY = 'rajneeti.sound';
-  const settings = { sfx: .8, music: .45, muted: false };
+  const settings = { sfx: .85, music: .7, muted: false };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* storage blocked */ }
 
-  let ctx = null, sfxBus = null, musicBus = null, verb = null, noiseBuf = null;
+  let ctx = null, sfxBus = null, musicBus = null, verb = null, noiseBuf = null, keepAlive = null;
   let mode = 'title', step = 0, nextAt = 0;
+  const plucks = new Map();
 
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
 
@@ -15,20 +18,32 @@ const Sound = (() => {
     if (!ctx) return;
     const t = ctx.currentTime;
     sfxBus.gain.setTargetAtTime(settings.muted ? 0 : settings.sfx, t, .03);
-    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .55, t, .15);
+    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .9, t, .15);
+    if (keepAlive) keepAlive.muted = settings.muted;
   }
 
-  // A short synthetic room so sounds feel less "beepy".
   function makeReverb() {
-    const len = ctx.sampleRate * 1.6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    const len = ctx.sampleRate * 1.8, ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let c = 0; c < 2; c++) {
       const d = ir.getChannelData(c);
-      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
     }
     const conv = ctx.createConvolver(); conv.buffer = ir;
-    const wet = ctx.createGain(); wet.gain.value = .22;
+    const wet = ctx.createGain(); wet.gain.value = .25;
     conv.connect(wet); wet.connect(ctx.destination);
     return conv;
+  }
+
+  // iPhones silence Web Audio in silent mode unless a media element is playing,
+  // so loop an inaudible clip once sound is unlocked.
+  function silentClip() {
+    const sr = 8000, n = sr / 2, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+    let bin = ''; new Uint8Array(buf).forEach(b => { bin += String.fromCharCode(b); });
+    return 'data:audio/wav;base64,' + btoa(bin);
   }
 
   // Browsers only allow audio after the player touches the screen.
@@ -39,17 +54,21 @@ const Sound = (() => {
       ctx = new AC();
       verb = makeReverb();
       sfxBus = ctx.createGain(); sfxBus.connect(ctx.destination); sfxBus.connect(verb);
-      musicBus = ctx.createGain(); musicBus.connect(ctx.destination);
+      musicBus = ctx.createGain(); musicBus.connect(ctx.destination); musicBus.connect(verb);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      try { keepAlive = new Audio(silentClip()); keepAlive.loop = true; keepAlive.setAttribute('playsinline', ''); } catch (e) { keepAlive = null; }
       applyVolumes();
-      nextAt = ctx.currentTime + .1;
-      setInterval(schedule, 120);
+      nextAt = ctx.currentTime + .15;
+      setInterval(schedule, 100);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx.state !== 'running') ctx.resume(); });
     }
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state !== 'running') ctx.resume();
+    if (keepAlive && keepAlive.paused) keepAlive.play().catch(() => {});
   }
 
+  // ---------- building blocks ----------
   function env(g, t, vol, attack, dur) {
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(vol, t + attack);
@@ -69,7 +88,7 @@ const Sound = (() => {
     o.start(t); o.stop(t + dur + .05);
   }
 
-  function noise(dur, { vol = .3, at = 0, type = 'bandpass', freq = 1000, to = null, q = 1, bus = sfxBus, attack = .005 } = {}) {
+  function noise(dur, { vol = .3, at = 0, type = 'bandpass', freq = 1000, to = null, q = 1, bus = sfxBus, attack = .004 } = {}) {
     const t = ctx.currentTime + at;
     const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
     src.buffer = noiseBuf; src.loop = true;
@@ -80,45 +99,115 @@ const Sound = (() => {
     src.start(t, Math.random()); src.stop(t + dur + .05);
   }
 
-  // dhol-like drums for music and effects
-  const kick = (at, vol = .5, bus = sfxBus) => tone(140, .25, { at, vol, to: 45, bus });
-  const tak = (at, vol = .25, bus = sfxBus) => noise(.07, { at, vol, freq: 2500, q: 2, bus });
-  const bell = (f, at = 0, vol = .2) => [1, 2.76, 5.4].forEach((m, i) => tone(f * m, 1.2 / (i + 1), { at, vol: vol / (i + 1) }));
+  // Plucked string (Karplus–Strong): tumbi when bright, sitar when buzzy.
+  function pluckBuffer(freq, bright) {
+    const key = Math.round(freq) + (bright ? 'b' : 's');
+    if (plucks.has(key)) return plucks.get(key);
+    const sr = ctx.sampleRate, len = Math.floor(sr * (bright ? .9 : 1.8)), p = Math.max(2, Math.round(sr / freq));
+    const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (let i = 0; i < p; i++) d[i] = Math.random() * 2 - 1;
+    const decay = bright ? .994 : .997;
+    for (let i = p; i < len; i++) {
+      const v = decay * .5 * (d[i - p] + d[i - p + 1 < i ? i - p + 1 : i - p]);
+      d[i] = bright ? v : Math.tanh(v * 1.6) * .8; // a little jawari buzz for the sitar
+    }
+    plucks.set(key, buf);
+    return buf;
+  }
+  function pluck(freq, { at = 0, vol = .4, bright = true, bus = musicBus } = {}) {
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = pluckBuffer(freq, bright);
+    g.gain.value = vol;
+    src.connect(g); g.connect(bus);
+    src.start(ctx.currentTime + at);
+  }
 
-  const N = { C4: 261.63, D4: 293.66, E4: 329.63, G4: 392, A4: 440, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5 };
+  // Shehnai: a nasal double-reed with vibrato and a slide (meend) into the note.
+  function shehnai(freq, dur, { at = 0, vol = .1, from = null, bus = musicBus } = {}) {
+    const t = ctx.currentTime + at;
+    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    const bp = ctx.createBiquadFilter(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+    o1.type = 'sawtooth'; o2.type = 'square';
+    [o1, o2].forEach(o => {
+      if (from) { o.frequency.setValueAtTime(from, t); o.frequency.exponentialRampToValueAtTime(freq, t + Math.min(.18, dur * .4)); }
+      else o.frequency.setValueAtTime(freq, t);
+    });
+    o2.detune.value = 7;
+    lfo.frequency.value = 5.5; lg.gain.value = freq * .012;
+    lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency);
+    bp.type = 'bandpass'; bp.frequency.value = 1300; bp.Q.value = 1.4;
+    lp.type = 'lowpass'; lp.frequency.value = 3800;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + .05);
+    g.gain.setValueAtTime(vol, t + dur * .8);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o1.connect(bp); o2.connect(bp); bp.connect(lp); lp.connect(g); g.connect(bus);
+    [o1, o2, lfo].forEach(o => { o.start(t); o.stop(t + dur + .05); });
+  }
 
+  // Harmonium: reedy chord with a slow swell.
+  function harmonium(freqs, dur, { at = 0, vol = .035 } = {}) {
+    for (const f of freqs) for (const d of [-4, 4]) {
+      const t = ctx.currentTime + at, o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = f; o.detune.value = d;
+      lp.type = 'lowpass'; lp.frequency.value = 1600;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .12);
+      g.gain.setValueAtTime(vol, t + dur - .1); g.gain.linearRampToValueAtTime(0, t + dur);
+      o.connect(lp); lp.connect(g); g.connect(musicBus);
+      o.start(t); o.stop(t + dur + .05);
+    }
+  }
+
+  // Drums: dhol has a deep bass head (dagga) and a sharp stick side (tilli).
+  const dholBass = (at, vol = .55, bus = musicBus) => { tone(95, .38, { at, vol, to: 52, bus }); noise(.05, { at, vol: vol * .25, freq: 300, q: .7, bus }); };
+  const dholTilli = (at, vol = .22, bus = musicBus) => { noise(.05, { at, vol, freq: 3200, q: 1.5, bus }); tone(540, .05, { at, vol: vol * .5, type: 'triangle', bus }); };
+  const tablaDha = (at, vol = .3) => { tone(110, .3, { at, vol, to: 80, bus: musicBus }); tone(520, .5, { at, vol: vol * .4, bus: musicBus }); };
+  const tablaNa = (at, vol = .22) => { tone(520, .35, { at, vol, bus: musicBus }); tone(1560, .12, { at, vol: vol * .3, bus: musicBus }); };
+  const tablaGe = (at, vol = .3) => tone(120, .22, { at, vol, to: 70, bus: musicBus });
+  const manjira = (at, vol = .06) => { tone(3520, .45, { at, vol, bus: musicBus }); tone(5280, .3, { at, vol: vol * .6, bus: musicBus }); };
+  // a crowd "Hoy!" shout, as in bhangra
+  const hoy = (at, vol = .1) => { tone(240, .2, { at, vol, type: 'sawtooth', to: 190, lp: 1200, bus: musicBus }); noise(.18, { at, vol: vol * .8, freq: 900, q: 3, bus: musicBus }); };
+
+  // ---------- note names (Sa = C4) ----------
+  const SA = 261.63;
+  const r = n => SA * Math.pow(2, n / 12); // semitones from Sa
+
+  // ---------- sound effects ----------
   const SFX = {
-    tap: () => { tone(900, .07, { vol: .16, to: 380 }); },
-    deal: () => [0, .06, .12].forEach(at => noise(.09, { at, vol: .18, freq: 1800, to: 4000, q: .8 })),
-    flip: () => { noise(.12, { vol: .2, freq: 900, to: 3000 }); tone(500, .1, { type: 'triangle', vol: .08, at: .05, to: 900 }); },
-    swipe: () => noise(.28, { vol: .35, freq: 500, to: 4500, q: .7 }),
-    good: () => { [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, .25, { type: 'triangle', vol: .2, at: i * .06 })); tone(N.C6 * 2, .4, { vol: .05, at: .24 }); },
-    bad: () => { tone(220, .32, { type: 'sawtooth', vol: .14, to: 180, lp: 900 }); tone(196, .5, { type: 'sawtooth', vol: .14, at: .3, to: 140, lp: 900 }); },
-    coin: () => [0, .07, .14, .21].forEach((at, i) => { tone(1300 + i * 220, .09, { type: 'square', vol: .06, at }); tone(2600 + i * 300, .12, { vol: .05, at: at + .03 }); }),
+    tap: () => { tablaNa(0, .12); },
+    pop: () => { tone(700, .08, { vol: .2, to: 1300 }); tablaNa(0, .1); },
+    oops: () => { tone(300, .2, { type: 'sawtooth', vol: .1, to: 150, lp: 900 }); },
+    deal: () => [0, .07, .14].forEach(at => noise(.08, { at, vol: .16, freq: 1800, to: 4000, q: .8 })),
+    flip: () => { noise(.12, { vol: .18, freq: 900, to: 3000 }); },
+    swipe: () => noise(.28, { vol: .3, freq: 500, to: 4500, q: .7 }),
+    good: () => { [0, 4, 7, 12].forEach((n, i) => pluck(r(n + 12), { at: i * .06, vol: .5, bus: sfxBus })); manjira(.25, .08); },
+    bad: () => { shehnai(r(3), .35, { vol: .12, bus: sfxBus }); shehnai(r(1), .6, { at: .3, vol: .12, from: r(3), bus: sfxBus }); },
+    coin: () => [0, .07, .14, .21].forEach((at, i) => { tone(1300 + i * 220, .09, { type: 'square', vol: .05, at }); tone(2600 + i * 300, .12, { vol: .05, at: at + .03 }); }),
     cheer: () => {
-      noise(1.4, { vol: .35, freq: 900, q: .6, attack: .25 });
-      noise(1.2, { vol: .2, freq: 2200, q: 1.5, attack: .2, at: .05 });
-      [0, .25, .5].forEach(at => kick(at, .35));
-      tone(1800, .35, { vol: .05, at: .3, to: 2600 }); tone(2000, .3, { vol: .04, at: .6, to: 2900 });
+      noise(1.5, { vol: .32, freq: 900, q: .6, attack: .25 });
+      noise(1.3, { vol: .18, freq: 2200, q: 1.5, attack: .2, at: .05 });
+      [0, .22, .44, .66].forEach((at, i) => { dholBass(at, .5, sfxBus); dholTilli(at + .11, .2, sfxBus); if (i % 2) hoy(at, .12); });
     },
-    drumroll: () => { for (let i = 0; i < 16; i++) tak(i * .05, .08 + i * .012); },
+    drumroll: () => { for (let i = 0; i < 18; i++) dholTilli(i * .045, .06 + i * .012, sfxBus); dholBass(.85, .6, sfxBus); },
     stamp: () => { tone(160, .3, { vol: .5, to: 50 }); noise(.12, { vol: .3, freq: 600, q: .5 }); },
-    news: () => { bell(N.A5, 0, .16); bell(N.E5, .18, .16); },
-    alarm: () => [0, .3].forEach(at => tone(700, .28, { type: 'square', vol: .07, at, to: 1100, lp: 2500 })),
+    news: () => { manjira(0, .12); manjira(.18, .12); },
+    alarm: () => { shehnai(r(12), .25, { vol: .14, bus: sfxBus }); shehnai(r(13), .25, { at: .25, vol: .14, bus: sfxBus }); shehnai(r(12), .4, { at: .5, vol: .14, bus: sfxBus }); },
     sword: () => { noise(.25, { vol: .3, freq: 5000, to: 1500, q: 4 }); tone(1200, .4, { type: 'triangle', vol: .08, to: 1500 }); },
-    tv: () => [N.C5, N.G5, N.E5, N.C6].forEach((f, i) => tone(f, .14, { type: 'square', vol: .06, at: i * .1, lp: 3000 })),
-    whoosh: () => noise(.5, { vol: .3, freq: 300, to: 3000, q: .6, attack: .2 }),
-    tick: () => tone(1700, .04, { vol: .1, to: 1200 }),
-    up: () => [0, .05, .1].forEach((at, i) => tone(600 + i * 200, .1, { type: 'triangle', vol: .12, at })),
-    down: () => [0, .07, .14].forEach((at, i) => tone(500 - i * 90, .12, { type: 'triangle', vol: .12, at })),
+    tv: () => [0, 4, 7, 12].forEach((n, i) => shehnai(r(n + 12), .14, { at: i * .1, vol: .08, bus: sfxBus })),
+    whoosh: () => noise(.5, { vol: .28, freq: 300, to: 3000, q: .6, attack: .2 }),
+    tick: () => tablaNa(0, .1),
+    count: () => { tone(880, .06, { vol: .12 }); },
+    go: () => { dholBass(0, .6, sfxBus); hoy(0, .2); },
+    up: () => [0, 4, 7].forEach((n, i) => pluck(r(n + 12), { at: i * .05, vol: .45, bus: sfxBus })),
+    down: () => [7, 4, 0].forEach((n, i) => pluck(r(n), { at: i * .07, vol: .45, bus: sfxBus, bright: false })),
     win: () => {
-      const brass = (f, at, dur) => tone(f, dur, { type: 'sawtooth', vol: .1, at, lp: 2200, attack: .03 });
-      [[N.C4, N.E4, N.G4], [N.C4, N.E4, N.G4], [N.D4, N.G4, 493.88], [N.E4, N.G4, N.C5]].forEach((ch, i) => ch.forEach(f => brass(f * 2, i * .18, i === 3 ? 1.2 : .16)));
-      [0, .18, .36, .54].forEach(at => kick(at, .45));
-      for (let i = 0; i < 8; i++) tak(.54 + i * .07, .15);
-      [N.C6, N.E5 * 2, N.G5 * 2].forEach((f, i) => tone(f, .6, { vol: .05, at: .6 + i * .08 }));
+      // shehnai fanfare over a dhol burst, like a victory procession
+      [[0, .18], [4, .18], [7, .18], [12, .9]].forEach(([n, d], i) => shehnai(r(n + 12), d + .05, { at: i * .17, vol: .13, from: i ? r(n + 10) : null, bus: sfxBus }));
+      for (let i = 0; i < 8; i++) { dholBass(i * .17, .5, sfxBus); dholTilli(i * .17 + .085, .22, sfxBus); }
+      hoy(.68, .2); hoy(1.02, .2);
+      for (let i = 0; i < 6; i++) manjira(.7 + i * .1, .08);
     },
-    lose: () => [N.G4, 369.99, N.E4, 311.13].forEach((f, i) => tone(f, i === 3 ? .9 : .3, { type: 'sawtooth', vol: .1, at: i * .3, lp: 1200, to: i === 3 ? f * .9 : null })),
+    lose: () => [7, 6, 3, 2].forEach((n, i) => shehnai(r(n), i === 3 ? .9 : .3, { at: i * .3, vol: .1, from: i ? r(n + 1) : null, bus: sfxBus })),
   };
 
   function play(name) {
@@ -126,44 +215,100 @@ const Sound = (() => {
     try { SFX[name](); } catch (e) { /* audio node limits on old devices */ }
   }
 
-  // ---- music: a loop per game mode, scheduled slightly ahead ----
-  const SCALE = [N.C4, N.D4, N.E4, N.G4, N.A4, N.C5, N.D5, N.E5, N.G5, N.A5];
+  // Rally chant with the device's own voice ("… Zindabad!").
+  function chant(text) {
+    if (settings.muted || !settings.sfx || !('speechSynthesis' in window)) return;
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      const v = speechSynthesis.getVoices().find(x => /hi[-_]IN/i.test(x.lang)) || speechSynthesis.getVoices().find(x => /en[-_]IN/i.test(x.lang));
+      if (v) u.voice = v;
+      u.lang = v ? v.lang : 'hi-IN'; u.rate = 1.05; u.pitch = 1.1; u.volume = Math.min(1, settings.sfx + .1);
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    } catch (e) { /* speech not available */ }
+  }
+
+  // ---------- music ----------
+  // Each mode plays a step of a looping arrangement; steps are scheduled ~0.5 s ahead.
   const SONGS = {
-    title: { bpm: 92, mel: [5, -1, 4, 3, 4, -1, 2, -1, 3, 4, 5, 7, 6, -1, 5, -1], drum: 'x...t...x.x.t...', bass: [0, 0, 3, 3] },
-    campaign: { bpm: 118, mel: [5, 5, 7, 5, 4, 3, 4, -1, 2, 3, 4, 5, 4, 3, 2, -1, 5, 7, 8, 7, 5, 4, 5, -1, 4, 3, 2, 3, 0, -1, 0, -1], drum: 'x.tx.tx.x.tx.tt.', bass: [0, 0, 4, 3] },
-    gov: { bpm: 100, mel: [2, -1, 4, -1, 5, 4, 3, -1, 2, -1, 3, 4, 2, -1, 0, -1], drum: 'x...t.x.x...t...', bass: [0, 3, 4, 3] },
-    tense: { bpm: 132, mel: [0, -1, 0, -1, 1, -1, 0, -1, 2, -1, 1, -1, 0, -1, -1, -1], drum: 'xtttxtttxtttxttt', bass: [0, 0, 0, 1] },
+    // Title: shehnai alaap in Raag Yaman over a tanpura drone, slow and auspicious
+    title: {
+      stepDur: .5, len: 32,
+      play(s, at) {
+        if (s % 8 === 0) { pluck(r(-5), { at, vol: .35, bright: false }); pluck(r(0), { at: at + 1, vol: .3, bright: false }); pluck(r(0), { at: at + 2, vol: .3, bright: false }); pluck(r(-12), { at: at + 3, vol: .4, bright: false }); }
+        const phrase = { 0: [7, 2, null], 4: [9, 1.4, 11], 7: [11, 1, 9], 9: [12, 3, 11], 16: [14, 1.5, 12], 19: [12, 1, 14], 21: [11, 1, 12], 23: [9, 2, 11], 28: [7, 2, 9] };
+        const p = phrase[s];
+        if (p) shehnai(r(p[0]), p[1], { at, vol: .075, from: p[2] != null ? r(p[2]) : null });
+        if (s % 16 === 12) manjira(at, .04);
+      },
+    },
+    // Campaign: rally bhangra — dhol chaal, tumbi riff, shehnai hook, harmonium, "Hoy!"
+    campaign: {
+      stepDur: .1, len: 96, // triplet grid: 12 steps per bar, 8 bars
+      play(s, at) {
+        const b = Math.floor(s / 12) % 8, k = s % 12;
+        // dhol chaal: DHA . ti DHA . ti DHA ti ti DHA . ti
+        if ([0, 3, 6, 9].includes(k)) dholBass(at, k === 0 ? .55 : .42);
+        if ([2, 5, 7, 8, 11].includes(k)) dholTilli(at, .16);
+        if (k === 0 || k === 6) manjira(at, .035);
+        // harmonium chords: Sa – Ma – Pa – Sa
+        if (k === 0) { const root = [0, 5, 7, 0, 0, 5, 7, 7][b]; harmonium([r(root - 12), r(root - 5), r(root)], 1.15, { at }); }
+        // tumbi riff on bars 0-3, shehnai hook on bars 4-7
+        if (b < 4) {
+          const riff = [12, null, 14, 16, null, 14, 12, null, 10, 12, null, null];
+          const n = riff[k];
+          if (n != null) pluck(r(n + (b === 3 && k > 5 ? -2 : 0)), { at, vol: .3 });
+        } else {
+          const hook = { 0: [16, .55, 14], 6: [14, .3, null], 9: [12, .5, 14] };
+          const lastBar = { 0: [10, .3, 12], 3: [12, .9, 10] };
+          const h = (b === 7 ? lastBar : hook)[k];
+          if (h) shehnai(r(h[0]), h[1], { at, vol: .09, from: h[2] != null ? r(h[2]) : null });
+        }
+        if ((b === 3 || b === 7) && k === 9) hoy(at, .09);
+      },
+    },
+    // Governing: sitar in Raag Yaman over a tabla keherwa (Dha Ge Na Ti Na Ka Dhi Na)
+    gov: {
+      stepDur: .3, len: 64,
+      play(s, at) {
+        const k = s % 8;
+        if (k === 0 || k === 6) tablaDha(at, .22);
+        if (k === 1) tablaGe(at, .2);
+        if ([2, 4, 7].includes(k)) tablaNa(at, .12);
+        if (s % 16 === 0) { pluck(r(-12), { at, vol: .3, bright: false }); pluck(r(-5), { at: at + .6, vol: .25, bright: false }); }
+        // phrases move through Yaman: Sa Re Ga Ma# Pa Dha Ni
+        const mel = [0, 2, 4, null, 6, 7, null, 9, 11, null, 12, null, 11, 9, 7, null, 6, 4, null, 2, 4, null, 2, 0, null, null, 7, 9, 7, 6, 4, null];
+        const n = mel[s % mel.length];
+        if (n != null && s % 2 === 0) pluck(r(n), { at, vol: .32, bright: false });
+      },
+    },
+    // Counting day: fast dhol tension with a tanpura drone and a held shehnai
+    tense: {
+      stepDur: .12, len: 32,
+      play(s, at) {
+        if (s % 4 === 0) dholBass(at, .45);
+        dholTilli(at, .05 + (s % 32) * .004);
+        if (s % 16 === 0) { pluck(r(-12), { at, vol: .35, bright: false }); shehnai(r(s % 32 === 0 ? 7 : 8), 1.8, { at, vol: .05 }); }
+      },
+    },
   };
 
   function schedule() {
-    if (!ctx) return;
+    if (!ctx || ctx.state !== 'running') return;
     const song = SONGS[mode];
     if (!song || document.hidden || settings.muted || !settings.music) { nextAt = ctx.currentTime + .1; return; }
-    const beat = 60 / song.bpm / 2; // eighth notes
+    if (nextAt < ctx.currentTime) nextAt = ctx.currentTime + .05;
     while (nextAt < ctx.currentTime + .5) {
-      const at = Math.max(0, nextAt - ctx.currentTime);
-      const n = song.mel[step % song.mel.length];
-      if (n >= 0) {
-        tone(SCALE[n], beat * 1.8, { type: 'triangle', vol: .1, at, bus: musicBus, attack: .01 });
-        tone(SCALE[n] * 2, beat * .9, { vol: .025, at, bus: musicBus });
-      }
-      const d = song.drum[step % 16];
-      if (d === 'x') kick(at, .28, musicBus);
-      if (d === 't') tak(at, .07, musicBus);
-      if (step % 8 === 0) {
-        const root = SCALE[song.bass[(step / 8 | 0) % song.bass.length]] / 2;
-        tone(root, beat * 7, { type: 'sawtooth', vol: .05, at, bus: musicBus, lp: 500, attack: .05 });
-        tone(root * 1.5, beat * 7, { vol: .03, at, bus: musicBus, attack: .2 });
-      }
-      step++; nextAt += beat;
+      try { song.play(step % song.len, nextAt - ctx.currentTime); } catch (e) { /* skip a step on overload */ }
+      step++; nextAt += song.stepDur;
     }
   }
 
   return {
-    unlock, play,
+    unlock, play, chant,
+    get ready() { return !!ctx && ctx.state === 'running'; },
     music(m) { if (m !== mode) { mode = m; step = 0; } },
     get settings() { return settings; },
     set(k, v) { settings[k] = v; applyVolumes(); persist(); },
-    toggleMute() { settings.muted = !settings.muted; applyVolumes(); persist(); return settings.muted; },
+    toggleMute() { settings.muted = !settings.muted; applyVolumes(); persist(); if (settings.muted && 'speechSynthesis' in window) speechSynthesis.cancel(); return settings.muted; },
   };
 })();

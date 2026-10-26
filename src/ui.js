@@ -76,6 +76,7 @@ function topbar(chips) {
 // ---------------- title & setup ----------------
 function renderTitle() {
   return `<div class="screen title">
+    ${UI.started ? '' : '<button class="tapstart" data-a="tapstart"><span class="ts-emo">🥁</span><b>TAP TO START</b><small>🔊 Sound on</small></button>'}
     <div class="sky"></div>
     <div class="titlemute">${muteBtn()}</div>
     <div class="logo-art">🏛️</div>
@@ -134,11 +135,11 @@ function dealCampaign() {
 function moveCard(c, i) {
   const s = c.s ? stateById(c.s) : null;
   let icon, title, sub, badge;
-  if (c.k === 'rally') { icon = '📣'; title = `Big rally in ${s.name}`; sub = `Win hearts · ${s.seats} seats`; badge = '💰15'; }
-  if (c.k === 'alliance') { const ch = allianceChance(s.id); icon = '🤝'; title = `Make friends in ${s.name}`; sub = `Their local party joins you`; badge = ch >= .5 ? 'Easy 😀' : ch >= .25 ? 'Maybe 🤞' : 'Hard 😬'; }
+  if (c.k === 'rally') { icon = '📣'; title = `Big rally in ${s.name}`; sub = `🎮 Tap game · ${s.seats} seats`; badge = '💰15'; }
+  if (c.k === 'alliance') { const ch = allianceChance(s.id); icon = '🤝'; title = `Make friends in ${s.name}`; sub = `🎮 Timing game · ${s.seats} seats`; badge = ch >= .5 ? 'Easy 😀' : ch >= .25 ? 'Maybe 🤞' : 'Hard 😬'; }
   if (c.k === 'ads') { icon = '📺'; title = 'Ads on TV'; sub = 'Everyone sees you'; badge = '💰40'; }
   if (c.k === 'attack') { icon = '⚔️'; title = 'Show RSP mistakes'; sub = 'Can go wrong!'; badge = '💰10'; }
-  if (c.k === 'fundraise') { icon = '💰'; title = 'Collect money'; sub = 'Get 💰50 more'; badge = 'FREE'; }
+  if (c.k === 'fundraise') { icon = '💰'; title = 'Collect money'; sub = '🎮 Catch the coins'; badge = 'FREE'; }
   const blocked = actionBlocked(c.k, c.s);
   return `<button class="mcard" data-a="move" data-i="${i}" ${blocked ? 'disabled' : ''} style="animation-delay:${i * 90}ms">
     <span class="mi">${icon}</span><span class="mt"><b>${title}</b><small>${sub}</small></span><span class="badge">${badge}</span></button>`;
@@ -495,25 +496,29 @@ async function campaignMove(i, btn) {
   document.querySelectorAll('.mcard').forEach(el => el.classList.add(el === btn ? 'picked' : 'away'));
   buzz(15);
   await wait(380);
-  if (c.k === 'alliance') {
-    Sound.play('drumroll');
-    await FX.burst('🤝', `Asking ${s.reg.short}…`, 'wait', '🤞🤞🤞');
-  }
-  const r = campaignAction(c.k, c.s, false);
+  // three of the moves are played as quick finger games
+  let power;
+  const funds0 = C.funds;
+  if (c.k === 'rally') power = await Mini.rally(s.name);
+  if (c.k === 'alliance') power = await Mini.handshake(s.reg.short, allianceChance(c.s));
+  if (c.k === 'fundraise') power = await Mini.coins();
+  const r = campaignAction(c.k, c.s, false, power);
   if (r.err) { UI.deal = null; return handle(r); }
   UI.live = pollSnapshot();
   const gain = UI.live.youBloc - before, seats = gain > 0 ? `+${gain} seats!` : '';
-  if (c.k === 'rally') { Sound.play('cheer'); await FX.burst('📣', `Big crowd in ${s.name}!`, 'good', seats || '🙌 People love you'); }
+  if (c.k === 'rally') {
+    Sound.chant(`${G.leader.split(' ')[0]} ज़िंदाबाद! ज़िंदाबाद!`);
+    await FX.burst('📣', `${G.leader.split(' ')[0]} Zindabad!`, 'good', seats || '🙌 People love you');
+  }
   if (c.k === 'alliance') {
     if (C.alliances[c.s] === 'you') { Sound.play('win'); await FX.burst('🎉', `${s.reg.short} is your friend!`, 'good', seats || `${s.name} is with you`); }
     else { Sound.play('bad'); await FX.burst('😕', 'They said no…', 'bad', 'Try again later'); }
   }
   if (c.k === 'ads') { Sound.play('tv'); await FX.burst('📺', 'Everyone saw your ad!', 'good', seats); }
   if (c.k === 'fundraise') {
-    Sound.play('coin');
     const money = $('.money');
     await FX.fly('🪙', btn, money, 8);
-    if (money) { FX.countUp(money, Math.round(C.funds) - 50, Math.round(C.funds), 500); money.parentElement.classList.add('hop'); }
+    if (money) { FX.countUp(money, Math.round(funds0), Math.round(C.funds), 600); money.parentElement.classList.add('hop'); }
   }
   if (c.k === 'attack') {
     Sound.play('sword');
@@ -659,6 +664,7 @@ async function coalitionOffer(key, offer, btn) {
 }
 
 const ACTIONS = {
+  tapstart() { UI.started = true; Sound.play('go'); render(); },
   continue() { if (load()) { UI.screen = 'game'; UI.deal = null; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null; render(); } },
   newgame() { UI.setup = { leader: '', symbol: PARTY_SYMBOLS[0], color: PARTY_COLORS[0] }; UI.screen = 'setup'; G = null; render(); },
   help() { openModal(helpHTML()); },

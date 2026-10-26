@@ -263,3 +263,48 @@ p { margin: .3em 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ===================== tap to start ===================== */
+.tapstart { position: absolute !important; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(40, 10, 70, .55); color: #fff; backdrop-filter: blur(2px); }
+.tapstart b { font-size: 30px; font-weight: 900; letter-spacing: .08em; animation: glow 1.2s ease-in-out infinite; text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+.tapstart small { font-weight: 800; opacity: .9; }
+.ts-emo { font-size: 90px; animation: hop 1s ease-in-out infinite; }
+
+/* ===================== mini-games ===================== */
+.mini { position: absolute; inset: 0; z-index: 64; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(170deg, #ffb347, #ff5f8a 50%, #7b4dff); animation: popIn .3s ease-out both; touch-action: none; }
+.mini.out { opacity: 0; transform: scale(1.05); transition: all .25s; }
+.mg-head { background: #fff; border-radius: 20px; padding: 10px 14px; text-align: center; box-shadow: 0 6px 0 rgba(0, 0, 0, .18); width: 100%; }
+.mg-head b { display: block; font-size: 20px; font-weight: 900; }
+.mg-head span { color: #6b7194; font-weight: 700; font-size: 14px; }
+.mg-head span b, .mg-head .g { display: inline; font-size: inherit; color: #16a34a; }
+.mg-score { color: #fff; font-weight: 900; font-size: 22px; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
+.mg-time { width: 100%; height: 12px; border-radius: 6px; background: rgba(0, 0, 0, .2); overflow: hidden; }
+.mg-time i { display: block; height: 100%; width: 100%; background: #ffd166; transform-origin: left; }
+.running .mg-time i { animation: drain linear forwards; }
+@keyframes drain { to { transform: scaleX(0); } }
+.mg-count { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-size: 110px; font-weight: 900; color: #fff; text-shadow: 0 8px 0 rgba(0, 0, 0, .25); }
+.mg-count.beat { animation: popIn .45s cubic-bezier(.2, .9, .3, 1.6); }
+.mg-end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(30, 10, 60, .6); animation: popIn .3s both; }
+.mg-end[hidden] { display: none; }
+
+.crowd { flex: 1; width: 100%; max-width: 420px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-content: center; }
+.hole { aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 70%, #5b2a86 0 45%, #3b1460 46% 100%); box-shadow: inset 0 -8px 0 rgba(0, 0, 0, .25), 0 6px 0 rgba(0, 0, 0, .2); overflow: hidden; position: relative; padding: 0; }
+.hole span { position: absolute; left: 0; right: 0; bottom: -100%; font-size: 52px; line-height: 1; transition: bottom .14s cubic-bezier(.3, 1.6, .5, 1); display: grid; place-items: center; height: 100%; }
+.hole.up span { bottom: 0; }
+.hole.hit { box-shadow: 0 0 0 6px #4ade80, 0 6px 0 rgba(0, 0, 0, .2); }
+.hole.miss { box-shadow: 0 0 0 6px #f87171, 0 6px 0 rgba(0, 0, 0, .2); animation: sadShake .3s; }
+
+.hands { font-size: 70px; margin-top: 20px; }
+.pulse-heart { display: inline-block; animation: hop .8s ease-in-out infinite; font-size: 40px; vertical-align: middle; }
+.meterbar { position: relative; width: 100%; height: 64px; border-radius: 32px; background: linear-gradient(90deg, #f87171, #facc15 30%, #facc15 70%, #f87171); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, .15), 0 6px 0 rgba(0, 0, 0, .2); margin: 26px 0; }
+.meterbar .zone { position: absolute; top: 0; bottom: 0; background: #22c55e; border-radius: 10px; box-shadow: inset 0 0 0 4px #fff; }
+.meterbar .needle { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 46px; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .3)); }
+.needle.hit { animation: hop .5s; }
+.needle.miss { animation: sadShake .4s; }
+.tapbtn { margin-top: auto; font-size: 26px !important; padding: 22px !important; }
+
+.field { position: relative; flex: 1; width: 100%; border-radius: 24px; background: rgba(255, 255, 255, .15); overflow: hidden; touch-action: none; }
+.drop { position: absolute; font-size: 40px; transform: translate(-50%, -50%); pointer-events: none; }
+.bag { position: absolute; bottom: 4%; font-size: 64px; transform: translateX(-50%); transition: left .05s linear; pointer-events: none; }
+.bag.gulp { animation: hop .3s; }

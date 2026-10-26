@@ -202,10 +202,10 @@ const CAMPAIGN_ACTIONS = {
   rally: {
     name: 'Mega Rally', icon: '📣', cost: 15, state: true,
     desc: 'Big boost to local support in this state. Diminishing returns.',
-    run(s) {
+    run(s, opt, power = 1) {
       const C = G.camp, g = C.ground[s.id];
-      const gain = 4.2 * (1 - g / 32);
-      C.ground[s.id] = g + gain; C.momentum += .4;
+      const gain = 4.2 * power * (1 - g / 32);
+      C.ground[s.id] = g + gain; C.momentum += .4 * power;
       return `Massive crowd at your rally in ${s.name}. Local support +${round1(gain)}.`;
     },
   },
@@ -222,10 +222,10 @@ const CAMPAIGN_ACTIONS = {
   alliance: {
     name: 'Alliance Talks', icon: '🤝', cost: 0, state: true,
     desc: 'Invite the regional party into your alliance.',
-    run(s, generous) {
+    run(s, generous, force) {
       const C = G.camp, cur = C.alliances[s.id];
       if (generous) C.funds -= 25;
-      if (rand() < allianceChance(s.id, generous)) {
+      if (force === undefined ? rand() < allianceChance(s.id, generous) : force) {
         C.alliances[s.id] = 'you';
         if (generous) C.generous[s.id] = true;
         C.affinity[s.id] = Math.min(1, C.affinity[s.id] + .1);
@@ -258,8 +258,8 @@ const CAMPAIGN_ACTIONS = {
   fundraise: {
     name: 'Corporate Fundraiser', icon: '💰', cost: 0,
     desc: 'Raise ₹50–80 cr. Trust −2, and big donors can come back to haunt you.',
-    run() {
-      const C = G.camp, amt = Math.round(50 + Math.max(0, G.appeal.you.business) * 3);
+    run(s, opt, power = 1) {
+      const C = G.camp, amt = Math.round((50 + Math.max(0, G.appeal.you.business) * 3) * power);
       C.funds += amt; G.trust = clamp(G.trust - 2, 0, 100); C.donorRisk++;
       return `Industrialists open their wallets: +${fmtCr(amt)}. Trust −2.`;
     },
@@ -300,12 +300,12 @@ function pollSnapshot() {
   return { you: Math.round(p.totals.you), A: Math.round(p.totals.A), youBloc: Math.round(p.youBloc), aBloc: Math.round(p.aBloc), others: Math.round(p.others) };
 }
 
-function campaignAction(id, stateId, opt) {
+function campaignAction(id, stateId, opt, power) {
   const a = CAMPAIGN_ACTIONS[id];
   const err = actionBlocked(id, stateId, opt);
   if (err) return { err };
   spend(a.cost);
-  const msg = a.run(stateId ? stateById(stateId) : null, opt);
+  const msg = a.run(stateId ? stateById(stateId) : null, opt, power);
   log(msg);
   save();
   return { msg };
@@ -637,7 +637,7 @@ function billChance(id) {
   return ls * st.rsChance;
 }
 
-function isBudgetQuarter() { return G.calQ % 4 === 2 || G.gov.q === 0; }
+function isBudgetQuarter() { return (G.calQ % 4 === 2 && G.gov.q >= 4) || G.gov.q === 0; }
 
 function applyBudget(budget) {
   const g = G.gov, e = G.eco, old = { ...e.b };
@@ -682,7 +682,7 @@ function startQuarter() {
   g.events = [];
   dealHand();
   // scheduled events
-  if (G.calQ % 4 === 1 && !g.flags.onoe) g.events.push({ id: 'stateelection', ctx: { states: pickStateElection() } });
+  if (G.calQ % 4 === 0 && g.q > 0 && !g.flags.onoe) g.events.push({ id: 'stateelection', ctx: { states: pickStateElection() } });
   // random events
   const pool = GOV_EVENTS.filter(e => !e.scheduled && (!e.when || e.when(G)));
   const weighted = [];
@@ -817,12 +817,10 @@ function allyPackage(key) {
 }
 
 // --- quarter simulation ---
-function endQuarter() {
+// One quarter of economic and political change.
+function stepQuarter() {
   const g = G.gov, e = G.eco;
-  if (g.events.length) return { err: 'Answer the news card first' };
-  if (isBudgetQuarter() && g.lastBudgetQ !== g.q) return { err: 'Pick the Money Day plan first' };
   const prev = { growth: e.growth, infl: e.infl, unemp: e.unemp, sensex: e.sensex, deficit: e.deficit, approval: overallApproval() };
-
   // shocks
   let gShock = 0, iShock = 0;
   for (const s of e.shocks) { gShock += s.g; iShock += s.i; s.left--; }
@@ -887,15 +885,23 @@ function endQuarter() {
   G.hist.approval.push(round1(appr));
   G.hist.sensex.push(Math.round(e.sensex));
   G.quartersAsPM++;
-
   g.q++; G.calQ++;
+}
+
+function endQuarter() {
+  const g = G.gov, e = G.eco;
+  if (g.events.length) return { err: 'Answer the news card first' };
+  if (isBudgetQuarter() && g.lastBudgetQ !== g.q) return { err: 'Pick the Money Day plan first' };
+
+  // each turn is half a year: two quarters pass
+  for (let i = 0; i < 2 && g.q < 20; i++) stepQuarter();
   if (govSeats() < MAJORITY && !g.minority && !g.events.some(x => x.id === 'noconfidence')) {
     g.minority = true;
   }
   if (g.q >= 20) { endTerm(); save(); return { termEnd: true }; }
   startQuarter();
   if (g.pendingRisk) { g.events.unshift({ id: g.pendingRisk, ctx: {} }); g.pendingRisk = null; }
-  if (govSeats() < MAJORITY && appr < 42 && rand() < .5) g.events.unshift({ id: 'noconfidence', ctx: {} });
+  if (govSeats() < MAJORITY && overallApproval() < 42 && rand() < .5) g.events.unshift({ id: 'noconfidence', ctx: {} });
   save();
   return {};
 }
