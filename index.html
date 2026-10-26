@@ -167,10 +167,120 @@ p { margin: .3em 0; }
 .titlemute { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 16px; }
 .vol { display: flex; flex-direction: column; gap: 6px; font-weight: 800; margin: 12px 0 18px; }
 .vol input { width: 100%; height: 32px; accent-color: #22c55e; }
+
+/* ===================== game feel: motion & effects ===================== */
+#view { height: 100%; }
+@keyframes popIn { 0% { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes flipIn { 0% { opacity: 0; transform: perspective(800px) rotateY(-80deg) scale(.8); } 70% { transform: perspective(800px) rotateY(8deg); } 100% { opacity: 1; transform: none; } }
+@keyframes wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg) scale(1.05); } 75% { transform: rotate(8deg) scale(1.05); } }
+@keyframes hop { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-12px) scale(1.15); } 70% { transform: translateY(2px) scale(.95); } }
+@keyframes sadShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px) rotate(-6deg); } 75% { transform: translateX(5px) rotate(6deg); } }
+@keyframes shake { 0%, 100% { transform: translate(0); } 20% { transform: translate(-8px, 3px); } 40% { transform: translate(7px, -4px); } 60% { transform: translate(-5px, 2px); } 80% { transform: translate(4px, -1px); } }
+@keyframes glow { 0%, 100% { filter: brightness(1); transform: scale(1); } 50% { filter: brightness(1.12); transform: scale(1.03); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rays { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes letterDrop { 0% { opacity: 0; transform: translateY(-60px) rotate(-20deg); } 60% { transform: translateY(8px) rotate(4deg); } 100% { opacity: 1; transform: none; } }
+@keyframes rise { from { transform: translateY(0); } to { transform: translateY(-120vh) rotate(25deg); } }
+@keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 0) scale(.6); } 20% { opacity: 1; transform: translate(-50%, -14px) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -70px) scale(1); } }
+@keyframes stampIn { 0% { opacity: 0; transform: translate(-50%, -50%) scale(3) rotate(-25deg); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-12deg); } }
+@keyframes bannerIn { 0% { transform: translateX(110%) skewX(-12deg); } 100% { transform: translateX(0) skewX(-12deg); } }
+@keyframes bannerOut { to { transform: translateX(-120%) skewX(-12deg); } }
+@keyframes nowDot { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .8); } 50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); } }
+@keyframes lit { 0% { transform: scale(1.6); filter: brightness(1.6); } 100% { transform: scale(1); filter: none; } }
+
+.pop-in { animation: popIn .35s cubic-bezier(.2, .9, .3, 1.4) both; }
+.flipin { animation: flipIn .5s cubic-bezier(.2, .9, .3, 1.2) both; }
+.wobble { animation: wobble 1.6s ease-in-out infinite; display: inline-block; }
+.spin { animation: spin 2s linear infinite; display: inline-block; }
+.glow { animation: glow 1.6s ease-in-out infinite; }
+.hop { animation: hop .6s cubic-bezier(.3, 1.6, .5, 1); }
+.sad { animation: sadShake .5s ease-in-out; }
+.shake { animation: shake .45s ease-in-out; }
+
+/* title */
+.title { overflow: hidden; }
+.logo span { display: inline-block; animation: letterDrop .6s cubic-bezier(.2, .9, .3, 1.3) both; }
+.sky { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sky-item { position: absolute; bottom: -60px; opacity: .7; animation: rise linear infinite; }
+.hero-av { width: 96px; height: 96px; border-radius: 30px; display: grid; place-items: center; font-size: 56px; box-shadow: 0 8px 0 rgba(0, 0, 0, .2); border: 5px solid #fff; animation: hop 1.8s ease-in-out infinite; margin-top: 10px; }
+.title > * { position: relative; }
+.title > .titlemute, .title > .sky { position: absolute; }
+
+/* week path */
+.path { display: flex; gap: 6px; justify-content: center; margin: -2px 0 10px; }
+.path i { width: 22px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .3); font-style: normal; font-size: 12px; line-height: 8px; }
+.path i.done { background: #fff; }
+.path i.now { background: #ffd166; animation: nowDot 1.2s infinite; }
+
+/* move cards */
+.mcard { position: relative; overflow: hidden; }
+.mcard::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .7) 50%, transparent 60%); transform: translateX(-100%); animation: shine 3.5s ease-in-out infinite; pointer-events: none; }
+@keyframes shine { 0%, 70% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.mcard.picked { animation: none; transform: scale(1.06); box-shadow: 0 0 0 5px #ffd166, 0 10px 0 rgba(0, 0, 0, .2); transition: transform .25s cubic-bezier(.2, .9, .3, 1.5); z-index: 2; }
+.mcard.away { animation: none; opacity: 0; transform: translateX(120%) rotate(8deg); transition: all .35s ease-in; }
+.mcard.away:nth-child(odd) { transform: translateX(-120%) rotate(-8deg); }
+.gbtn.chosen { transform: scale(1.06); box-shadow: 0 0 0 5px #fff, 0 6px 0 rgba(0, 0, 0, .25); }
+
+/* avatars */
+.av { transition: transform .2s; }
+.bigcard.alert { border: 4px solid #ef4444; box-shadow: 0 8px 0 rgba(0, 0, 0, .18), 0 0 0 6px rgba(239, 68, 68, .25); }
+.kicker { font-size: 12px; font-weight: 900; letter-spacing: .14em; color: #9a5b00; text-transform: uppercase; }
+.alert .kicker { color: #dc2626; }
+
+/* idea deck */
+.deck { position: relative; }
+.ghost-card { position: absolute; inset: 0; background: rgba(255, 255, 255, .5); border-radius: 28px; }
+.ghost-card.g1 { transform: translateY(8px) scale(.96); }
+.ghost-card.g2 { transform: translateY(16px) scale(.92); opacity: .6; }
+.bigstamp { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%) rotate(-12deg); font-size: 44px; font-weight: 900; padding: 6px 18px; border: 6px solid; border-radius: 14px; background: rgba(255, 255, 255, .85); animation: stampIn .3s cubic-bezier(.3, 1.4, .5, 1) both; letter-spacing: .05em; }
+.bigstamp.yes { color: #16a34a; }
+.bigstamp.no { color: #dc2626; }
+
+/* meters */
+.mfill i { transition: height .9s cubic-bezier(.2, .9, .3, 1.2), background .5s; }
+
+/* results map */
+.results-stage { justify-content: center; }
+.rmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 16px auto 4px; width: 100%; max-width: 380px; }
+.rmap i { aspect-ratio: 1.1; border-radius: 8px; font-style: normal; font-weight: 900; font-size: 11px; color: rgba(0, 0, 0, .55); display: grid; place-items: center; transition: background .3s; }
+.rmap i.lit { animation: lit .45s cubic-bezier(.2, .9, .3, 1.3); color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .3); }
+.counting { animation: glow .5s infinite; }
+
+/* overlays */
+.fx-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; }
+.fx-burst { position: absolute; inset: 0; z-index: 65; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, .3), rgba(30, 10, 60, .78) 70%); animation: popIn .3s ease-out both; pointer-events: none; }
+.fx-burst.out { opacity: 0; transform: scale(1.1); transition: all .25s ease-in; }
+.fx-burst .rays { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; transform: translate(-50%, -50%); background: repeating-conic-gradient(rgba(255, 255, 255, .28) 0 10deg, transparent 10deg 20deg); border-radius: 50%; animation: rays 6s linear infinite; mask: radial-gradient(circle, #000 20%, transparent 65%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 65%); }
+.fx-burst.bad .rays, .fx-burst.wait .rays { display: none; }
+.fx-burst.bad { background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, .2), rgba(80, 0, 20, .6) 70%); }
+.fx-burst.rival { background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, .15), rgba(120, 10, 10, .6) 70%); }
+.b-emo { position: relative; font-size: 110px; line-height: 1.1; animation: popIn .45s cubic-bezier(.2, .9, .3, 1.6) both, wobble 1.4s ease-in-out .45s infinite; filter: drop-shadow(0 10px 0 rgba(0, 0, 0, .2)); }
+.wait .b-emo { animation: popIn .3s both, sadShake .35s ease-in-out infinite; }
+.b-title { position: relative; margin-top: 10px; background: #fff; color: #1d2142; font-size: 24px; font-weight: 900; padding: 12px 20px; border-radius: 20px; box-shadow: 0 6px 0 rgba(0, 0, 0, .2); animation: popIn .4s .12s cubic-bezier(.2, .9, .3, 1.5) both; max-width: 100%; }
+.b-sub { position: relative; margin-top: 12px; color: #fff; font-size: 18px; font-weight: 900; text-shadow: 0 2px 0 rgba(0, 0, 0, .3); line-height: 1.5; animation: popIn .4s .25s both; }
+.good .b-sub { font-size: 24px; color: #fff59d; }
+.fx-banner { position: absolute; left: -10%; right: -10%; top: 38%; z-index: 66; pointer-events: none; animation: bannerIn .35s cubic-bezier(.2, .9, .3, 1.2) both; }
+.fx-banner.out { animation: bannerOut .3s ease-in both; }
+.ban-in { background: #1d2142; color: #fff; padding: 18px 16%; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 0 rgba(0, 0, 0, .25); border-top: 5px solid #ffd166; border-bottom: 5px solid #ffd166; }
+.ban-in b, .ban-in span { transform: skewX(12deg); }
+.ban-in b { font-size: 38px; font-weight: 900; letter-spacing: .06em; }
+.ban-in span { font-size: 17px; font-weight: 800; color: #ffd166; }
+.fx-banner.green .ban-in { background: #15803d; border-color: #bbf7d0; }
+.fx-banner.green .ban-in span { color: #bbf7d0; }
+.fx-banner.red .ban-in { background: #b91c1c; border-color: #fecaca; }
+.fx-banner.red .ban-in span { color: #fecaca; }
+.fx-banner.gold .ban-in { background: linear-gradient(90deg, #f59e0b, #f97316); border-color: #fff; }
+.fx-banner.gold .ban-in span { color: #fff; }
+.fx-float { position: absolute; z-index: 68; font-size: 26px; font-weight: 900; pointer-events: none; text-shadow: 0 2px 0 rgba(0, 0, 0, .35); animation: floatUp 1.2s ease-out forwards; }
+.fx-fly { position: absolute; z-index: 68; font-size: 30px; pointer-events: none; transform: translate(0, 0); transition: transform .55s cubic-bezier(.5, -0.4, .6, 1), opacity .55s; margin: -15px 0 0 -15px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div id="view"></div></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
 // RAJNEETI — static game data. All parties and people are fictional.
@@ -958,13 +1068,15 @@ function addPromise(id) {
 
 function rivalTurn() {
   const C = G.camp, ai = DIFFICULTY[G.difficulty].rivalAI;
+  C.rivalMoves = []; // what the RSP did this week, shown to the player
   // RSP targets the states where you are closest to overtaking them
-  if (rand() < .6) C.momA += 1.6 * ai;
+  if (rand() < .6) { C.momA += 1.6 * ai; C.rivalMoves.push({ k: 'ads' }); }
   // RSP counters wherever you have been investing, weighted by seats
   const targets = STATES.slice().sort((a, b) => (C.ground[b.id] + 2) * b.seats - (C.ground[a.id] + 2) * a.seats).slice(0, 4);
   for (let i = 0; i < 3; i++) {
     const s = pick(targets), g = C.groundA[s.id];
     C.groundA[s.id] = g + 3.5 * ai * (1 - g / 32);
+    if (!C.rivalMoves.some(m => m.s === s.id)) C.rivalMoves.push({ k: 'rally', s: s.id });
   }
   if (rand() < .4) { const s = pick(STATES); C.groundB[s.id] += 2; C.momB += .5; }
   // RSP courts regional parties
@@ -975,6 +1087,7 @@ function rivalTurn() {
       const proj = C.polls[C.polls.length - 1];
       if (rand() < .6 * (1 - C.affinity[s.id]) + (proj ? (proj.A - proj.you) / 600 : 0)) {
         C.alliances[s.id] = 'A';
+        C.rivalMoves.push({ k: 'ally', s: s.id });
         log(`⚠️ The ${s.reg.short} (${s.name}) has allied with the RSP.`, 'bad');
       }
     }
@@ -984,6 +1097,7 @@ function rivalTurn() {
     if (mine.length) {
       const s = pick(mine);
       C.alliances[s.id] = 'A'; delete C.generous[s.id];
+      C.rivalMoves.push({ k: 'steal', s: s.id });
       log(`💔 The RSP poached your ally ${s.reg.short} in ${s.name}!`, 'bad');
     }
   }
@@ -1623,15 +1737,156 @@ function hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) 
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ } }
 </script>
 <script>
+// RAJNEETI — game "juice": confetti, reward bursts, flying coins, floating
+// numbers, screen shake and banners. Every effect returns a promise that
+// resolves when it is done, so the game can play them in sequence.
+
+const FX = (() => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const app = () => document.getElementById('app');
+  const calm = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- confetti on a canvas over the whole game ----
+  let canvas = null, parts = [], running = false;
+  function confetti(n = 120, colors = ['#ff9933', '#ffffff', '#138808', '#ffd166', '#7b4dff', '#ff5f8a']) {
+    if (calm()) return;
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.className = 'fx-canvas';
+      app().appendChild(canvas);
+    }
+    if (!canvas.isConnected) app().appendChild(canvas);
+    const w = canvas.width = app().clientWidth * devicePixelRatio, h = canvas.height = app().clientHeight * devicePixelRatio;
+    for (let i = 0; i < n; i++) {
+      parts.push({
+        x: w / 2 + (Math.random() - .5) * w * .3, y: h * .45,
+        vx: (Math.random() - .5) * 26 * devicePixelRatio, vy: (-Math.random() * 26 - 8) * devicePixelRatio,
+        r: (4 + Math.random() * 6) * devicePixelRatio, c: colors[i % colors.length],
+        a: Math.random() * 6, va: (Math.random() - .5) * .4, life: 1,
+      });
+    }
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  }
+  function tick() {
+    const g = canvas.getContext('2d');
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of parts) {
+      p.vy += .9 * devicePixelRatio; p.vx *= .985; p.vy *= .985;
+      p.x += p.vx; p.y += p.vy; p.a += p.va; p.life -= .006;
+      g.save(); g.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); g.translate(p.x, p.y); g.rotate(p.a);
+      g.fillStyle = p.c; g.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+      g.restore();
+    }
+    parts = parts.filter(p => p.life > 0 && p.y < canvas.height + 40);
+    if (parts.length) requestAnimationFrame(tick);
+    else { running = false; g.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+
+  // ---- a big popping reward card in the middle of the screen ----
+  async function burst(emoji, title, kind = 'good', sub = '') {
+    const el = document.createElement('div');
+    el.className = `fx-burst ${kind}`;
+    el.innerHTML = `<div class="rays"></div><div class="b-emo">${emoji}</div><div class="b-title">${title}</div>${sub ? `<div class="b-sub">${sub}</div>` : ''}`;
+    app().appendChild(el);
+    if (kind === 'good') confetti(60);
+    if (kind === 'bad') shake();
+    await wait(calm() ? 900 : 1300);
+    el.classList.add('out');
+    await wait(250);
+    el.remove();
+  }
+
+  // ---- a banner that sweeps across ("WEEK 4", "RSP's turn") ----
+  async function banner(title, sub = '', cls = '', ms = 1100) {
+    const el = document.createElement('div');
+    el.className = `fx-banner ${cls}`;
+    el.innerHTML = `<div class="ban-in"><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`;
+    app().appendChild(el);
+    Sound.play('whoosh');
+    await wait(ms);
+    el.classList.add('out');
+    await wait(300);
+    el.remove();
+  }
+
+  function shake() {
+    if (calm()) return;
+    const a = app();
+    a.classList.remove('shake'); void a.offsetWidth; a.classList.add('shake');
+    setTimeout(() => a.classList.remove('shake'), 500);
+  }
+
+  // ---- "+12" rising from an element ----
+  function floatText(target, text, color = '#fff') {
+    const r = target.getBoundingClientRect(), base = app().getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'fx-float';
+    el.textContent = text; el.style.color = color;
+    el.style.left = (r.left - base.left + r.width / 2) + 'px';
+    el.style.top = (r.top - base.top) + 'px';
+    app().appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
+
+  // ---- emoji flying from one element to another (coins to the wallet) ----
+  async function fly(emoji, from, to, n = 6) {
+    if (!from || !to || calm()) return;
+    const base = app().getBoundingClientRect(), a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('div');
+      el.className = 'fx-fly'; el.textContent = emoji;
+      el.style.left = (a.left - base.left + a.width / 2 + (Math.random() - .5) * 60) + 'px';
+      el.style.top = (a.top - base.top + a.height / 2) + 'px';
+      app().appendChild(el);
+      const dx = (b.left - a.left) + (b.width - a.width) / 2, dy = (b.top - a.top) + (b.height - a.height) / 2;
+      setTimeout(() => { el.style.transform = `translate(${dx}px, ${dy}px) scale(.5)`; el.style.opacity = '.2'; }, 30 + i * 70);
+      setTimeout(() => { el.remove(); if (i % 2 === 0) Sound.play('tick'); }, 650 + i * 70);
+    }
+    await wait(650 + n * 70);
+  }
+
+  // ---- count a number up or down inside an element ----
+  function countUp(el, from, to, ms = 700) {
+    if (!el || from === to) return;
+    const t0 = performance.now();
+    const step = t => {
+      const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step);
+    };
+    el.textContent = from;
+    requestAnimationFrame(step);
+  }
+
+  // floating ballots and kites drifting up behind the title screen
+  function sky(holder) {
+    if (!holder || calm()) return;
+    const icons = ['🪁', '🎈', '✉️', '⭐', '🪁', '🎈'];
+    for (let i = 0; i < 12; i++) {
+      const el = document.createElement('span');
+      el.className = 'sky-item'; el.textContent = icons[i % icons.length];
+      el.style.left = (Math.random() * 92) + '%';
+      el.style.animationDelay = (-Math.random() * 14) + 's';
+      el.style.animationDuration = (10 + Math.random() * 8) + 's';
+      el.style.fontSize = (18 + Math.random() * 22) + 'px';
+      holder.appendChild(el);
+    }
+  }
+
+  return { wait, confetti, burst, banner, shake, floatText, fly, countUp, sky };
+})();
+</script>
+<script>
 // RAJNEETI — sound effects and music, synthesised with Web Audio so the game
 // needs no audio files and keeps working offline.
 
 const Sound = (() => {
   const KEY = 'rajneeti.sound';
-  const settings = { sfx: .7, music: .4, muted: false };
+  const settings = { sfx: .8, music: .45, muted: false };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* storage blocked */ }
 
-  let ctx = null, sfxBus = null, musicBus = null, musicTimer = null, step = 0, nextAt = 0;
+  let ctx = null, sfxBus = null, musicBus = null, verb = null, noiseBuf = null;
+  let mode = 'title', step = 0, nextAt = 0;
 
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
 
@@ -1639,7 +1894,20 @@ const Sound = (() => {
     if (!ctx) return;
     const t = ctx.currentTime;
     sfxBus.gain.setTargetAtTime(settings.muted ? 0 : settings.sfx, t, .03);
-    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .5, t, .1);
+    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .55, t, .15);
+  }
+
+  // A short synthetic room so sounds feel less "beepy".
+  function makeReverb() {
+    const len = ctx.sampleRate * 1.6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    }
+    const conv = ctx.createConvolver(); conv.buffer = ir;
+    const wet = ctx.createGain(); wet.gain.value = .22;
+    conv.connect(wet); wet.connect(ctx.destination);
+    return conv;
   }
 
   // Browsers only allow audio after the player touches the screen.
@@ -1648,52 +1916,88 @@ const Sound = (() => {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       ctx = new AC();
-      sfxBus = ctx.createGain(); sfxBus.connect(ctx.destination);
+      verb = makeReverb();
+      sfxBus = ctx.createGain(); sfxBus.connect(ctx.destination); sfxBus.connect(verb);
       musicBus = ctx.createGain(); musicBus.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       applyVolumes();
-      startMusic();
+      nextAt = ctx.currentTime + .1;
+      setInterval(schedule, 120);
     }
     if (ctx.state === 'suspended') ctx.resume();
   }
 
-  function tone(freq, dur, { type = 'sine', vol = .3, at = 0, to = null, bus = sfxBus } = {}) {
+  function env(g, t, vol, attack, dur) {
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  }
+
+  function tone(freq, dur, { type = 'sine', vol = .3, at = 0, to = null, bus = sfxBus, attack = .008, lp = null } = {}) {
     const t = ctx.currentTime + at;
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type;
     o.frequency.setValueAtTime(freq, t);
     if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t + .01);
-    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    o.connect(g); g.connect(bus);
-    o.start(t); o.stop(t + dur + .02);
+    env(g, t, vol, attack, dur);
+    let node = o;
+    if (lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); node = f; }
+    node.connect(g); g.connect(bus);
+    o.start(t); o.stop(t + dur + .05);
   }
 
-  function whoosh(dur = .25, vol = .25) {
-    const t = ctx.currentTime;
-    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  function noise(dur, { vol = .3, at = 0, type = 'bandpass', freq = 1000, to = null, q = 1, bus = sfxBus, attack = .005 } = {}) {
+    const t = ctx.currentTime + at;
     const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-    src.buffer = buf; f.type = 'bandpass'; f.Q.value = 1.2;
-    f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(3000, t + dur);
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
-    src.connect(f); f.connect(g); g.connect(sfxBus);
-    src.start(t);
+    src.buffer = noiseBuf; src.loop = true;
+    f.type = type; f.Q.value = q; f.frequency.setValueAtTime(freq, t);
+    if (to) f.frequency.exponentialRampToValueAtTime(to, t + dur);
+    env(g, t, vol, attack, dur);
+    src.connect(f); f.connect(g); g.connect(bus);
+    src.start(t, Math.random()); src.stop(t + dur + .05);
   }
 
-  const C5 = 523.25, E5 = 659.25, G5 = 783.99, C6 = 1046.5;
+  // dhol-like drums for music and effects
+  const kick = (at, vol = .5, bus = sfxBus) => tone(140, .25, { at, vol, to: 45, bus });
+  const tak = (at, vol = .25, bus = sfxBus) => noise(.07, { at, vol, freq: 2500, q: 2, bus });
+  const bell = (f, at = 0, vol = .2) => [1, 2.76, 5.4].forEach((m, i) => tone(f * m, 1.2 / (i + 1), { at, vol: vol / (i + 1) }));
+
+  const N = { C4: 261.63, D4: 293.66, E4: 329.63, G4: 392, A4: 440, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5 };
+
   const SFX = {
-    tap: () => tone(660, .06, { type: 'triangle', vol: .18 }),
-    deal: () => tone(320, .12, { type: 'triangle', vol: .15, to: 640 }),
-    good: () => [C5, E5, G5].forEach((f, i) => tone(f, .14, { type: 'triangle', vol: .22, at: i * .07 })),
-    bad: () => { tone(392, .18, { type: 'sawtooth', vol: .12 }); tone(311, .3, { type: 'sawtooth', vol: .12, at: .14 }); },
-    coin: () => { tone(988, .08, { type: 'square', vol: .1 }); tone(1319, .22, { type: 'square', vol: .1, at: .07 }); },
-    swipe: () => whoosh(.22, .3),
-    tick: () => tone(1400, .03, { type: 'square', vol: .05 }),
-    news: () => { tone(880, .14, { type: 'triangle', vol: .2 }); tone(660, .2, { type: 'triangle', vol: .2, at: .13 }); },
-    win: () => { [C5, E5, G5, C6].forEach((f, i) => tone(f, i === 3 ? .7 : .16, { type: 'triangle', vol: .25, at: i * .13 })); tone(C5 / 2, .9, { vol: .2, at: .39 }); },
-    lose: () => [G5, E5, C5].forEach((f, i) => tone(f / 2, .35, { type: 'triangle', vol: .2, at: i * .25 })),
+    tap: () => { tone(900, .07, { vol: .16, to: 380 }); },
+    deal: () => [0, .06, .12].forEach(at => noise(.09, { at, vol: .18, freq: 1800, to: 4000, q: .8 })),
+    flip: () => { noise(.12, { vol: .2, freq: 900, to: 3000 }); tone(500, .1, { type: 'triangle', vol: .08, at: .05, to: 900 }); },
+    swipe: () => noise(.28, { vol: .35, freq: 500, to: 4500, q: .7 }),
+    good: () => { [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, .25, { type: 'triangle', vol: .2, at: i * .06 })); tone(N.C6 * 2, .4, { vol: .05, at: .24 }); },
+    bad: () => { tone(220, .32, { type: 'sawtooth', vol: .14, to: 180, lp: 900 }); tone(196, .5, { type: 'sawtooth', vol: .14, at: .3, to: 140, lp: 900 }); },
+    coin: () => [0, .07, .14, .21].forEach((at, i) => { tone(1300 + i * 220, .09, { type: 'square', vol: .06, at }); tone(2600 + i * 300, .12, { vol: .05, at: at + .03 }); }),
+    cheer: () => {
+      noise(1.4, { vol: .35, freq: 900, q: .6, attack: .25 });
+      noise(1.2, { vol: .2, freq: 2200, q: 1.5, attack: .2, at: .05 });
+      [0, .25, .5].forEach(at => kick(at, .35));
+      tone(1800, .35, { vol: .05, at: .3, to: 2600 }); tone(2000, .3, { vol: .04, at: .6, to: 2900 });
+    },
+    drumroll: () => { for (let i = 0; i < 16; i++) tak(i * .05, .08 + i * .012); },
+    stamp: () => { tone(160, .3, { vol: .5, to: 50 }); noise(.12, { vol: .3, freq: 600, q: .5 }); },
+    news: () => { bell(N.A5, 0, .16); bell(N.E5, .18, .16); },
+    alarm: () => [0, .3].forEach(at => tone(700, .28, { type: 'square', vol: .07, at, to: 1100, lp: 2500 })),
+    sword: () => { noise(.25, { vol: .3, freq: 5000, to: 1500, q: 4 }); tone(1200, .4, { type: 'triangle', vol: .08, to: 1500 }); },
+    tv: () => [N.C5, N.G5, N.E5, N.C6].forEach((f, i) => tone(f, .14, { type: 'square', vol: .06, at: i * .1, lp: 3000 })),
+    whoosh: () => noise(.5, { vol: .3, freq: 300, to: 3000, q: .6, attack: .2 }),
+    tick: () => tone(1700, .04, { vol: .1, to: 1200 }),
+    up: () => [0, .05, .1].forEach((at, i) => tone(600 + i * 200, .1, { type: 'triangle', vol: .12, at })),
+    down: () => [0, .07, .14].forEach((at, i) => tone(500 - i * 90, .12, { type: 'triangle', vol: .12, at })),
+    win: () => {
+      const brass = (f, at, dur) => tone(f, dur, { type: 'sawtooth', vol: .1, at, lp: 2200, attack: .03 });
+      [[N.C4, N.E4, N.G4], [N.C4, N.E4, N.G4], [N.D4, N.G4, 493.88], [N.E4, N.G4, N.C5]].forEach((ch, i) => ch.forEach(f => brass(f * 2, i * .18, i === 3 ? 1.2 : .16)));
+      [0, .18, .36, .54].forEach(at => kick(at, .45));
+      for (let i = 0; i < 8; i++) tak(.54 + i * .07, .15);
+      [N.C6, N.E5 * 2, N.G5 * 2].forEach((f, i) => tone(f, .6, { vol: .05, at: .6 + i * .08 }));
+    },
+    lose: () => [N.G4, 369.99, N.E4, 311.13].forEach((f, i) => tone(f, i === 3 ? .9 : .3, { type: 'sawtooth', vol: .1, at: i * .3, lp: 1200, to: i === 3 ? f * .9 : null })),
   };
 
   function play(name) {
@@ -1701,30 +2005,42 @@ const Sound = (() => {
     try { SFX[name](); } catch (e) { /* audio node limits on old devices */ }
   }
 
-  // Gentle looping tune on a Sa–Re–Ga–Pa–Dha scale over a tanpura-like drone.
-  const SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
-  const TUNE = [0, 2, 3, 4, 3, 2, 0, -1, 1, 2, 3, 5, 4, 3, 2, -1, 3, 4, 5, 6, 5, 4, 3, 2, 0, 2, 1, 0, 1, 2, 0, -1];
-  const BEAT = .3;
+  // ---- music: a loop per game mode, scheduled slightly ahead ----
+  const SCALE = [N.C4, N.D4, N.E4, N.G4, N.A4, N.C5, N.D5, N.E5, N.G5, N.A5];
+  const SONGS = {
+    title: { bpm: 92, mel: [5, -1, 4, 3, 4, -1, 2, -1, 3, 4, 5, 7, 6, -1, 5, -1], drum: 'x...t...x.x.t...', bass: [0, 0, 3, 3] },
+    campaign: { bpm: 118, mel: [5, 5, 7, 5, 4, 3, 4, -1, 2, 3, 4, 5, 4, 3, 2, -1, 5, 7, 8, 7, 5, 4, 5, -1, 4, 3, 2, 3, 0, -1, 0, -1], drum: 'x.tx.tx.x.tx.tt.', bass: [0, 0, 4, 3] },
+    gov: { bpm: 100, mel: [2, -1, 4, -1, 5, 4, 3, -1, 2, -1, 3, 4, 2, -1, 0, -1], drum: 'x...t.x.x...t...', bass: [0, 3, 4, 3] },
+    tense: { bpm: 132, mel: [0, -1, 0, -1, 1, -1, 0, -1, 2, -1, 1, -1, 0, -1, -1, -1], drum: 'xtttxtttxtttxttt', bass: [0, 0, 0, 1] },
+  };
 
-  function startMusic() {
-    nextAt = ctx.currentTime + .2;
-    musicTimer = setInterval(() => {
-      if (document.hidden || settings.muted || !settings.music) { nextAt = ctx.currentTime + .1; return; }
-      while (nextAt < ctx.currentTime + .6) {
-        const at = nextAt - ctx.currentTime;
-        const n = TUNE[step % TUNE.length];
-        if (n >= 0) tone(SCALE[n], BEAT * 1.6, { type: 'triangle', vol: .12, at, bus: musicBus });
-        if (step % 8 === 0) {
-          tone(130.81, BEAT * 8, { vol: .09, at, bus: musicBus });
-          tone(196.0, BEAT * 8, { vol: .05, at: at + BEAT * 2, bus: musicBus });
-        }
-        step++; nextAt += BEAT;
+  function schedule() {
+    if (!ctx) return;
+    const song = SONGS[mode];
+    if (!song || document.hidden || settings.muted || !settings.music) { nextAt = ctx.currentTime + .1; return; }
+    const beat = 60 / song.bpm / 2; // eighth notes
+    while (nextAt < ctx.currentTime + .5) {
+      const at = Math.max(0, nextAt - ctx.currentTime);
+      const n = song.mel[step % song.mel.length];
+      if (n >= 0) {
+        tone(SCALE[n], beat * 1.8, { type: 'triangle', vol: .1, at, bus: musicBus, attack: .01 });
+        tone(SCALE[n] * 2, beat * .9, { vol: .025, at, bus: musicBus });
       }
-    }, 150);
+      const d = song.drum[step % 16];
+      if (d === 'x') kick(at, .28, musicBus);
+      if (d === 't') tak(at, .07, musicBus);
+      if (step % 8 === 0) {
+        const root = SCALE[song.bass[(step / 8 | 0) % song.bass.length]] / 2;
+        tone(root, beat * 7, { type: 'sawtooth', vol: .05, at, bus: musicBus, lp: 500, attack: .05 });
+        tone(root * 1.5, beat * 7, { vol: .03, at, bus: musicBus, attack: .2 });
+      }
+      step++; nextAt += beat;
+    }
   }
 
   return {
     unlock, play,
+    music(m) { if (m !== mode) { mode = m; step = 0; } },
     get settings() { return settings; },
     set(k, v) { settings[k] = v; applyVolumes(); persist(); },
     toggleMute() { settings.muted = !settings.muted; applyVolumes(); persist(); return settings.muted; },
@@ -1732,22 +2048,25 @@ const Sound = (() => {
 })();
 </script>
 <script>
-// RAJNEETI — casual mobile game interface. One big card, a few big buttons.
+// RAJNEETI — casual mobile game interface. One big card, a few big buttons,
+// and an animated reaction to every choice.
 
-const UI = { screen: 'title', reveal: null, setup: null, toastT: null, deal: null, pdeal: null, card: 0 };
+const UI = { screen: 'title', reveal: null, setup: null, toastT: null, deal: null, pdeal: null, card: 0, busy: false, live: null, tugPrev: null, meterPrev: null };
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const buzz = (ms = 12) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* not supported */ } };
+const wait = FX.wait;
 
 const PROMISE_ICON = { loanwaiver: '🚜', msp: '🌾', taxcut: '💸', jobs: '👷', ops: '👴', cash: '👩', health: '🏥', corptax: '🏢', prices: '🧅', infra: '🛣️', lokpal: '🕵️', skills: '🛠️' };
 const REFORM_ICON = { gst: '🧾', labour: '🏭', farmmkt: '🌽', msp: '🌾', loanwaiver: '🚜', pli: '📱', disinvest: '🏷️', bankrecap: '🏦', health: '🏥', cash: '👩', ops: '👴', itsimple: '📄', green: '☀️', dpi: '📲', lokpal: '🕵️', land: '🏗️', urbanjobs: '🧱', skills: '🛠️', demo: '💵', onoe: '🗳️' };
+const RIVAL_FACE = '😈';
 
 function toast(msg, kind = '') {
   const t = $('#toast');
   t.textContent = msg; t.className = 'toast show ' + kind;
-  if (kind) Sound.play(kind === 'good' ? 'good' : 'bad');
+  if (kind === 'bad') Sound.play('bad');
   clearTimeout(UI.toastT);
-  UI.toastT = setTimeout(() => { t.className = 'toast'; }, 2600);
+  UI.toastT = setTimeout(() => { t.className = 'toast'; }, 2400);
 }
 
 function handle(res) {
@@ -1766,12 +2085,34 @@ function fans(blocs) {
 
 const word = (good, ok) => good ? '😀 Yes' : ok ? '😐 OK' : '😟 No';
 
+// The tug-of-war seat bar. It is drawn at the previous numbers and then
+// animated to the new ones by animateTug() after each render.
 function tug(you, A, label = 'Get 272 to win 👑') {
+  const p = UI.tugPrev || { you, A };
   const w = x => (x / TOTAL_SEATS * 100).toFixed(1) + '%';
-  return `<div class="tug">
-    <div class="tugtop"><span class="who"><i class="av" style="background:${G.color}">${G.symbol}</i><b>${you}</b></span><span class="need">${label}</span><span class="who right"><b>${A}</b><i class="av" style="background:${RIVALS.A.color}">🔥</i></span></div>
-    <div class="tugbar"><i class="me" style="width:${w(you)};background:${G.color}"></i><i class="them" style="width:${w(A)};background:${RIVALS.A.color}"></i><span class="crown">👑</span></div>
+  return `<div class="tug" data-you="${you}" data-a="${A}">
+    <div class="tugtop"><span class="who"><i class="av me-av" style="background:${G.color}">${G.symbol}</i><b class="n-you">${p.you}</b></span><span class="need">${label}</span><span class="who right"><b class="n-a">${p.A}</b><i class="av them-av" style="background:${RIVALS.A.color}">${RIVAL_FACE}</i></span></div>
+    <div class="tugbar"><i class="me" style="width:${w(p.you)};background:${G.color}"></i><i class="them" style="width:${w(p.A)};background:${RIVALS.A.color}"></i><span class="crown">👑</span></div>
   </div>`;
+}
+
+function animateTug(ms = 800) {
+  const t = $('.tug');
+  if (!t) { UI.tugPrev = null; return; }
+  const you = +t.dataset.you, A = +t.dataset.a, p = UI.tugPrev || { you, A };
+  const w = x => (x / TOTAL_SEATS * 100).toFixed(1) + '%';
+  requestAnimationFrame(() => {
+    t.querySelector('.me').style.width = w(you);
+    t.querySelector('.them').style.width = w(A);
+  });
+  FX.countUp(t.querySelector('.n-you'), p.you, you, ms);
+  FX.countUp(t.querySelector('.n-a'), p.A, A, ms);
+  if (ms >= 500) {
+    if (you > p.you) { FX.floatText(t.querySelector('.n-you'), `+${you - p.you}`, '#16a34a'); t.querySelector('.me-av').classList.add('hop'); }
+    if (you < p.you) { FX.floatText(t.querySelector('.n-you'), `−${p.you - you}`, '#dc2626'); t.querySelector('.me-av').classList.add('sad'); }
+    if (A > p.A) t.querySelector('.them-av').classList.add('hop');
+  }
+  UI.tugPrev = { you, A };
 }
 
 function muteBtn() {
@@ -1779,19 +2120,20 @@ function muteBtn() {
 }
 
 function topbar(chips) {
-  return `<header class="top">${chips.map(c => `<span class="chip">${c}</span>`).join('')}<span class="grow"></span>${muteBtn()}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
+  return `<header class="top">${chips.map((c, i) => `<span class="chip" id="chip${i}">${c}</span>`).join('')}<span class="grow"></span>${muteBtn()}<button class="menu" data-a="menu" aria-label="Menu">☰</button></header>`;
 }
 
 // ---------------- title & setup ----------------
 function renderTitle() {
   return `<div class="screen title">
+    <div class="sky"></div>
     <div class="titlemute">${muteBtn()}</div>
     <div class="logo-art">🏛️</div>
-    <h1 class="logo">RAJNEETI</h1>
+    <h1 class="logo">${'RAJNEETI'.split('').map((ch, i) => `<span style="animation-delay:${i * 70}ms">${ch}</span>`).join('')}</h1>
     <p class="sub">Become Prime Minister!</p>
     <div class="spacer"></div>
-    ${hasSave() ? '<button class="gbtn green big" data-a="continue">▶ CONTINUE</button>' : ''}
-    <button class="gbtn ${hasSave() ? 'blue' : 'green'} big" data-a="newgame">${hasSave() ? 'NEW GAME' : '▶ PLAY'}</button>
+    ${hasSave() ? '<button class="gbtn green big glow" data-a="continue">▶ CONTINUE</button>' : ''}
+    <button class="gbtn ${hasSave() ? 'blue' : 'green glow'} big" data-a="newgame">${hasSave() ? 'NEW GAME' : '▶ PLAY'}</button>
     <button class="gbtn ghost" data-a="help">How to play</button>
   </div>`;
 }
@@ -1799,12 +2141,14 @@ function renderTitle() {
 function renderSetup() {
   const s = UI.setup;
   return `<div class="screen title">
+    <div class="sky"></div>
+    <div class="hero-av" style="background:${s.color}">${s.symbol}</div>
     <h2 class="white">Who are you?</h2>
     <input id="f-leader" class="bigin" maxlength="22" value="${esc(s.leader)}" placeholder="Your name">
     <p class="white small">Pick your party symbol</p>
     <div class="symbols">${PARTY_SYMBOLS.map((x, i) => `<button class="symb ${s.symbol === x ? 'on' : ''}" style="background:${PARTY_COLORS[i % PARTY_COLORS.length]}" data-a="setsym" data-v="${x}" data-c="${PARTY_COLORS[i % PARTY_COLORS.length]}">${x}</button>`).join('')}</div>
     <div class="spacer"></div>
-    <button class="gbtn green big" data-a="start">START ▶</button>
+    <button class="gbtn green big glow" data-a="start">START ▶</button>
   </div>`;
 }
 
@@ -1813,9 +2157,9 @@ function helpHTML() {
   <div class="howto">
     <div><span>🃏</span><p>Pick a card each turn.</p></div>
     <div><span>🤝</span><p>Make friends with local parties — they bring seats.</p></div>
+    <div><span>${RIVAL_FACE}</span><p>The RSP plays too! Watch what they do.</p></div>
     <div><span>👑</span><p>Get <b>272 seats</b> to become PM.</p></div>
     <div><span>👉</span><p>As PM, swipe right to say yes, left to say no.</p></div>
-    <div><span>😀</span><p>Keep people happy. Win again!</p></div>
   </div>
   <button class="gbtn green" data-a="closemodal">OK!</button>`;
 }
@@ -1846,18 +2190,26 @@ function moveCard(c, i) {
   if (c.k === 'attack') { icon = '⚔️'; title = 'Show RSP mistakes'; sub = 'Can go wrong!'; badge = '💰10'; }
   if (c.k === 'fundraise') { icon = '💰'; title = 'Collect money'; sub = 'Get 💰50 more'; badge = 'FREE'; }
   const blocked = actionBlocked(c.k, c.s);
-  return `<button class="mcard" data-a="move" data-i="${i}" ${blocked ? 'disabled' : ''} style="animation-delay:${i * 60}ms">
+  return `<button class="mcard" data-a="move" data-i="${i}" ${blocked ? 'disabled' : ''} style="animation-delay:${i * 90}ms">
     <span class="mi">${icon}</span><span class="mt"><b>${title}</b><small>${sub}</small></span><span class="badge">${badge}</span></button>`;
+}
+
+function livePoll() { return UI.live || G.camp.polls[G.camp.polls.length - 1]; }
+
+function weekPath() {
+  const C = G.camp;
+  return `<div class="path">${Array.from({ length: C.weeks }, (_, i) => `<i class="${i + 1 < C.week ? 'done' : i + 1 === C.week ? 'now' : ''}">${i + 1 === C.weeks ? '🗳️' : ''}</i>`).join('')}</div>`;
 }
 
 function renderCampaign() {
   const C = G.camp;
-  const last = C.polls[C.polls.length - 1];
+  const last = livePoll();
   if (!C.manifestoDone && !C.promises.length) return renderManifesto(last);
   if (!UI.deal) dealCampaign();
   const ev = C.event && CAMPAIGN_EVENTS.find(e => e.id === C.event.id);
   return `<div class="screen">
-    ${topbar([`📅 Week ${C.week}/${C.weeks}`, `💰 ${Math.round(C.funds)}`])}
+    ${topbar([`📅 Week ${C.week}`, `💰 <b class="money">${Math.round(C.funds)}</b>`])}
+    ${weekPath()}
     ${tug(last.youBloc, last.aBloc)}
     ${ev ? eventCard(ev, C.event.ctx, 'cev') : `
     <div class="stage">
@@ -1868,10 +2220,10 @@ function renderCampaign() {
 }
 
 function renderManifesto(last) {
-  const C = G.camp;
   if (!UI.pdeal) {
     const chosen = UI.picked || [];
     UI.pdeal = PROMISES.filter(p => !chosen.includes(p.id)).sort(() => rand() - .5).slice(0, 3).map(p => p.id);
+    Sound.play('deal');
   }
   const n = (UI.picked || []).length;
   return `<div class="screen">
@@ -1881,7 +2233,7 @@ function renderManifesto(last) {
       <p class="prompt">What do you promise India?</p>
       <div class="mcards">${UI.pdeal.map((id, i) => {
         const p = PROMISES.find(x => x.id === id);
-        return `<button class="mcard" data-a="promise" data-id="${id}" style="animation-delay:${i * 60}ms"><span class="mi">${PROMISE_ICON[id]}</span><span class="mt"><b>${p.name}</b>${fans(p.blocs)}</span></button>`;
+        return `<button class="mcard" data-a="promise" data-id="${id}" style="animation-delay:${i * 90}ms"><span class="mi">${PROMISE_ICON[id]}</span><span class="mt"><b>${p.name}</b>${fans(p.blocs)}</span></button>`;
       }).join('')}</div>
     </div>
   </div>`;
@@ -1889,51 +2241,76 @@ function renderManifesto(last) {
 
 function eventCard(ev, ctx, kind) {
   const choices = ev.choices(G, ctx);
+  const crisis = kind === 'gev';
   return `<div class="stage">
-    <div class="bigcard news">
-      <div class="emo">${ev.icon}</div><h2>${ev.title}</h2><p>${esc(ev.text(G, ctx))}</p>
+    <div class="bigcard news flipin ${crisis ? 'alert' : ''}">
+      <div class="kicker">${crisis ? '🚨 NEWS!' : '📰 NEWS!'}</div>
+      <div class="emo wobble">${ev.icon}</div><h2>${ev.title}</h2><p>${esc(ev.text(G, ctx))}</p>
     </div>
-    <div class="answers">${choices.map((c, i) => `<button class="gbtn ${['blue', 'orange', 'red'][i]}" data-a="${kind}" data-i="${i}" ${(c.pc && G.gov && c.pc > G.gov.pc) || (c.cost && G.camp && kind === 'cev' && c.cost > G.camp.funds) ? 'disabled' : ''}>${c.label}${c.cost ? ` <small>₹${c.cost}</small>` : ''}${c.pc ? ` <small>${c.pc}⭐</small>` : ''}</button>`).join('')}</div>
+    <div class="answers">${choices.map((c, i) => `<button class="gbtn ${['blue', 'orange', 'red'][i]} pop-in" style="animation-delay:${200 + i * 90}ms" data-a="${kind}" data-i="${i}" ${(c.pc && G.gov && c.pc > G.gov.pc) || (c.cost && G.camp && kind === 'cev' && c.cost > G.camp.funds) ? 'disabled' : ''}>${c.label}${c.cost ? ` <small>💰${c.cost}</small>` : ''}${c.pc ? ` <small>${c.pc}⭐</small>` : ''}</button>`).join('')}</div>
   </div>`;
 }
 
 // ---------------- results ----------------
+function resultMap(r, shown) {
+  const seen = new Set(shown.map(s => s.id));
+  return `<div class="rmap">${STATES.map(s => {
+    let col = 'rgba(255,255,255,.25)', cls = '';
+    if (seen.has(s.id)) {
+      const x = r.byState[s.id], al = r.alliances[s.id];
+      const y = x.you + (al === 'you' ? x.R : 0), a = x.A + (al === 'A' ? x.R : 0);
+      col = y > a ? G.color : a > y ? RIVALS.A.color : '#9ca3af'; cls = 'lit';
+    }
+    return `<i class="${cls}" style="grid-column:${s.pos[0] + 1};grid-row:${s.pos[1] + 1};background:${col}">${s.id}</i>`;
+  }).join('')}</div>`;
+}
+
 function renderResults() {
   const r = G.result;
   const order = STATES.slice().sort((a, b) => a.seats - b.seats);
   if (!UI.reveal) {
     UI.reveal = { n: 0 };
+    Sound.music('tense');
     const step = () => {
       if (!UI.reveal || G.phase !== 'results') return;
       UI.reveal.n++; buzz(5); Sound.play('tick');
-      if (UI.reveal.n === order.length) Sound.play(r.youBloc >= MAJORITY ? 'win' : r.aBloc >= MAJORITY ? 'lose' : 'news');
       render();
-      if (UI.reveal.n < order.length) UI.reveal.timer = setTimeout(step, 180);
+      if (UI.reveal.n < order.length) UI.reveal.timer = setTimeout(step, 120 + UI.reveal.n * 9);
+      else finishReveal();
     };
-    UI.reveal.timer = setTimeout(step, 500);
+    UI.reveal.timer = setTimeout(step, 900);
   }
   let you = 0, A = 0;
-  for (const s of order.slice(0, UI.reveal.n)) {
+  const shown = order.slice(0, UI.reveal.n);
+  for (const s of shown) {
     const x = r.byState[s.id], al = r.alliances[s.id];
     you += x.you + (al === 'you' ? x.R : 0); A += x.A + (al === 'A' ? x.R : 0);
   }
   const done = UI.reveal.n >= order.length;
-  const latest = order[Math.min(UI.reveal.n, order.length) - 1];
+  const latest = shown[shown.length - 1];
   let verdict = '';
   if (done) {
     if (r.youBloc >= MAJORITY) verdict = '<div class="verdict win">🎉 YOU WIN! 🎉</div>';
-    else if (r.aBloc >= MAJORITY) verdict = '<div class="verdict lose">😢 YOU LOST</div>';
-    else verdict = '<div class="verdict">🤔 Nobody got 272! Find friends!</div>';
+    else if (r.aBloc >= MAJORITY) verdict = '<div class="verdict lose">😢 RSP WINS</div>';
+    else verdict = '<div class="verdict">🤔 Nobody got 272!</div>';
   }
   return `<div class="screen">
     ${topbar(['🗳️ Counting votes'])}
-    <div class="stage">
-      <div class="bignums"><div style="color:${G.color}"><b>${you}</b><small>${G.symbol} YOU</small></div><div class="vsx">VS</div><div style="color:${RIVALS.A.color}"><b>${A}</b><small>🔥 RSP</small></div></div>
+    <div class="stage results-stage">
       ${tug(you, A, '272 to win')}
-      ${!done && latest ? `<p class="prompt">${latest.name}…</p>` : verdict}
+      ${resultMap(r, shown)}
+      ${!done && latest ? `<p class="prompt counting">${latest.name}…</p>` : verdict}
     </div>
-    <div class="bottom">${done ? '<button class="gbtn green big" data-a="afterresults">NEXT ▶</button>' : '<button class="gbtn ghost" data-a="skipreveal">Skip ⏩</button>'}</div>
+    <div class="bottom">${done ? '<button class="gbtn green big glow" data-a="afterresults">NEXT ▶</button>' : '<button class="gbtn ghost" data-a="skipreveal">Skip ⏩</button>'}</div>
   </div>`;
+}
+
+function finishReveal() {
+  const r = G.result;
+  if (r.youBloc >= MAJORITY) { Sound.play('win'); FX.confetti(160); setTimeout(() => FX.confetti(120), 700); }
+  else if (r.aBloc >= MAJORITY) { Sound.play('lose'); FX.shake(); }
+  else Sound.play('news');
+  Sound.music('campaign');
 }
 
 // ---------------- coalition ----------------
@@ -1944,25 +2321,48 @@ function renderCoalition() {
     ${topbar([`🤝 Find friends · Try ${Math.min(c.round, c.rounds)}/${c.rounds}`])}
     ${tug(t.you, t.A)}
     ${k ? `<div class="stage">
-      <div class="bigcard"><div class="emo">🤝</div><h2>${esc(k.short)}</h2><p>This party has <b>${k.seats} seats</b>. Will they be your friend?</p></div>
+      <div class="bigcard flipin"><div class="kicker">They can make you win!</div><div class="emo wobble">🤝</div><h2>${esc(k.short)}</h2><p>This party has <b>${k.seats} seats</b>. Will they be your friend?</p></div>
       <div class="answers">
-        <button class="gbtn blue" data-a="offer" data-k="${k.key}" data-o="ask">🙏 Just ask</button>
-        <button class="gbtn orange" data-a="offer" data-k="${k.key}" data-o="berth" ${c.berths ? '' : 'disabled'}>🏛️ Make them minister</button>
-        <button class="gbtn green" data-a="offer" data-k="${k.key}" data-o="package">🎁 Give money to their state</button>
+        <button class="gbtn blue pop-in" data-a="offer" data-k="${k.key}" data-o="ask">🙏 Just ask</button>
+        <button class="gbtn orange pop-in" data-a="offer" data-k="${k.key}" data-o="berth" ${c.berths ? '' : 'disabled'}>🏛️ Make them minister</button>
+        <button class="gbtn green pop-in" data-a="offer" data-k="${k.key}" data-o="package">🎁 Give money to their state</button>
       </div></div>`
-    : `<div class="stage"><p class="prompt">Waiting for the others…</p></div><div class="bottom"><button class="gbtn green big" data-a="coalround">NEXT ▶</button></div>`}
+    : `<div class="stage"><div class="bigcard"><div class="emo spin">⏳</div><h2>Waiting for the others…</h2></div></div><div class="bottom"><button class="gbtn green big glow" data-a="coalround">NEXT ▶</button></div>`}
   </div>`;
 }
 
 // ---------------- governance ----------------
-function meter(icon, good, label) {
-  const g = clamp(good, 0, 1);
-  const col = g >= .6 ? '#4ade80' : g >= .35 ? '#facc15' : '#f87171';
-  return `<div class="meter"><div class="mfill"><i style="height:${Math.max(6, g * 100)}%;background:${col}"></i><span>${icon}</span></div><small>${label}</small></div>`;
+function meterValues() {
+  const e = G.eco;
+  return [(overallApproval() - 25) / 45, (e.growth - 2) / 7, 1 - (e.infl - 3.5) / 6, 1 - (e.deficit - 3.5) / 4.5].map(v => clamp(v, 0, 1));
+}
+const METERS = [['😀', 'Happy'], ['🏭', 'Jobs'], ['🛒', 'Prices'], ['🐷', 'Savings']];
+const meterColor = g => g >= .6 ? '#4ade80' : g >= .35 ? '#facc15' : '#f87171';
+
+function meters() {
+  const now = meterValues(), prev = UI.meterPrev || now;
+  return `<div class="meters" data-a="stats">${METERS.map(([icon, label], i) =>
+    `<div class="meter" data-v="${now[i]}"><div class="mfill"><i style="height:${Math.max(6, prev[i] * 100)}%;background:${meterColor(prev[i])}"></i><span>${icon}</span></div><small>${label}</small></div>`).join('')}</div>`;
+}
+
+function animateMeters() {
+  const els = document.querySelectorAll('.meter');
+  if (!els.length) { UI.meterPrev = null; return; }
+  const now = meterValues(), prev = UI.meterPrev || now;
+  requestAnimationFrame(() => els.forEach((el, i) => {
+    const bar = el.querySelector('i');
+    bar.style.height = Math.max(6, now[i] * 100) + '%'; bar.style.background = meterColor(now[i]);
+    const d = now[i] - prev[i];
+    if (Math.abs(d) > .03) {
+      FX.floatText(el, d > 0 ? '▲' : '▼', d > 0 ? '#bbf7d0' : '#fecaca');
+      el.classList.add(d > 0 ? 'hop' : 'sad');
+    }
+  }));
+  UI.meterPrev = now;
 }
 
 function renderGov() {
-  const g = G.gov, e = G.eco;
+  const g = G.gov;
   if (!g.hand) dealHand();
   const ev = g.events[0];
   const budgetDue = isBudgetQuarter() && g.lastBudgetQ !== g.q;
@@ -1970,15 +2370,10 @@ function renderGov() {
   if (ev) stage = eventCard(GOV_EVENTS.find(x => x.id === ev.id), ev.ctx, 'gev');
   else if (budgetDue) stage = budgetStage();
   else if (!g.played && UI.card < g.hand.length) stage = ideaStage(g.hand[UI.card]);
-  else stage = `<div class="stage"><div class="bigcard"><div class="emo">⏳</div><h2>Time passes…</h2></div></div><div class="bottom"><button class="gbtn green big" data-a="endq">NEXT ▶</button></div>`;
+  else stage = `<div class="stage"><div class="bigcard"><div class="emo spin">⏳</div><h2>Time passes…</h2></div></div><div class="bottom"><button class="gbtn green big glow" data-a="endq">NEXT ▶</button></div>`;
   return `<div class="screen">
-    ${topbar([`📅 Year ${Math.floor(g.q / 4) + 1}/5`, `⭐ ${g.pc} energy`])}
-    <div class="meters" data-a="stats">
-      ${meter('😀', (overallApproval() - 25) / 45, 'Happy')}
-      ${meter('🏭', (e.growth - 2) / 7, 'Jobs')}
-      ${meter('🛒', 1 - (e.infl - 3.5) / 6, 'Prices')}
-      ${meter('🐷', 1 - (e.deficit - 3.5) / 4.5, 'Savings')}
-    </div>
+    ${topbar([`📅 Year ${Math.floor(g.q / 4) + 1}/5`, `⭐ <b class="energy">${g.pc}</b>`])}
+    ${meters()}
     ${stage}
   </div>`;
 }
@@ -1986,8 +2381,8 @@ function renderGov() {
 function budgetStage() {
   const icons = { populist: 'green', balanced: 'blue', growth: 'orange', austerity: 'red' };
   return `<div class="stage">
-    <div class="bigcard"><div class="emo">📒</div><h2>Money Day!</h2><p>How will you use India's money this year?</p></div>
-    <div class="grid2">${Object.entries(BUDGET_PRESETS).map(([k, p]) => `<button class="gbtn ${icons[k]}" data-a="preset" data-k="${k}">${p.icon} ${p.name}</button>`).join('')}</div>
+    <div class="bigcard flipin"><div class="kicker">Once a year</div><div class="emo wobble">💰</div><h2>Money Day!</h2><p>How will you use India's money this year?</p></div>
+    <div class="grid2">${Object.entries(BUDGET_PRESETS).map(([k, p], i) => `<button class="gbtn ${icons[k]} pop-in" style="animation-delay:${200 + i * 80}ms" data-a="preset" data-k="${k}">${p.icon} ${p.name}</button>`).join('')}</div>
     <p class="tiny">Gifts make people happy now. Saving keeps India safe later.</p>
   </div>`;
 }
@@ -2005,15 +2400,17 @@ function ideaStage(c) {
     extra = `${promised ? '<div class="promised">📜 You promised this!</div>' : ''}${fans(r.blocs)}${st.objectors.length ? `<div class="warnline">😠 ${st.objectors.map(a => a.short).join(', ')} won't like it</div>` : ''}`;
   }
   return `<div class="stage">
-    <div class="bigcard swipe" data-can="${can ? 1 : 0}">
+    <div class="deck"><div class="ghost-card g2"></div><div class="ghost-card g1"></div>
+    <div class="bigcard swipe flipin" data-can="${can ? 1 : 0}">
       <div class="stamp yes">YES</div><div class="stamp no">NO</div>
       <span class="costtag ${can ? '' : 'poor'}">${cost} ⭐</span>
+      <div class="kicker">Idea ${UI.card + 1} of ${g.hand.length}</div>
       <div class="emo">${icon}</div><h2>${title}</h2><p>${desc}</p>${extra}
-    </div>
+    </div></div>
     <div class="yesno">
       <button class="round red" data-a="skipcard" aria-label="No">✖</button>
       <span class="tiny">${can ? 'NO ← swipe → YES' : 'Need more ⭐ energy'}</span>
-      <button class="round green" data-a="playcard" ${can ? '' : 'disabled'} aria-label="Yes">✔</button>
+      <button class="round green ${can ? 'glow' : ''}" data-a="playcard" ${can ? '' : 'disabled'} aria-label="Yes">✔</button>
     </div>
   </div>`;
 }
@@ -2022,13 +2419,14 @@ function ideaStage(c) {
 function renderReport() {
   const r = G.report;
   return `<div class="screen title">
+    <div class="sky"></div>
     <div class="logo-art">📋</div><h2 class="white">5 years done!</h2>
-    <div class="bigcard">
+    <div class="bigcard flipin">
       <p>😀 People happy: <b>${r.approval}%</b></p>
       <p>✅ Promises kept <b>${r.kept.length}</b> · ❌ broken <b>${r.broken.length}</b></p>
     </div>
     <div class="spacer"></div>
-    <button class="gbtn green big" data-a="reelect">ELECTION TIME ▶</button>
+    <button class="gbtn green big glow" data-a="reelect">ELECTION TIME ▶</button>
   </div>`;
 }
 
@@ -2036,15 +2434,25 @@ function renderGameOver() {
   const L = legacyScore();
   const lostFirst = G.quartersAsPM === 0;
   return `<div class="screen title">
+    <div class="sky"></div>
     <div class="logo-art">${lostFirst ? '😢' : '🏆'}</div>
     <h2 class="white">${lostFirst ? 'So close! Try again.' : `You ruled for ${L.yrs} years!`}</h2>
-    <div class="bigcard"><small>YOUR TITLE</small><h2>${L.title}</h2><div class="score">⭐ ${L.score}</div></div>
+    <div class="bigcard flipin"><small>YOUR TITLE</small><h2>${L.title}</h2><div class="score">⭐ <b class="final-score">${L.score}</b></div></div>
     <div class="spacer"></div>
-    <button class="gbtn green big" data-a="newgame">PLAY AGAIN ▶</button>
+    <button class="gbtn green big glow" data-a="newgame">PLAY AGAIN ▶</button>
   </div>`;
 }
 
 // ---------------- router ----------------
+function musicFor() {
+  if (!G || UI.screen !== 'game') return 'title';
+  if (G.phase === 'campaign') return 'campaign';
+  if (G.phase === 'results') return UI.reveal && UI.reveal.n >= STATES.length ? 'campaign' : 'tense';
+  if (G.phase === 'coalition') return 'tense';
+  if (G.phase === 'gov') return 'gov';
+  return 'title';
+}
+
 function render() {
   let html;
   if (UI.screen === 'setup') html = renderSetup();
@@ -2055,12 +2463,18 @@ function render() {
   else if (G.phase === 'gov') html = renderGov();
   else if (G.phase === 'termreport') html = renderReport();
   else html = renderGameOver();
-  $('#app').innerHTML = html;
+  $('#view').innerHTML = html;
   bindSwipe();
+  FX.sky($('.sky'));
+  animateTug(G && G.phase === 'results' ? 200 : 800);
+  animateMeters();
+  const fs = $('.final-score'); if (fs) FX.countUp(fs, 0, +fs.textContent, 1500);
+  Sound.music(musicFor());
   // ring a bell when a new news card appears
-  const ev = G && ((G.phase === 'campaign' && G.camp.event) || (G.phase === 'gov' && G.gov.events[0]));
+  const ev = G && UI.screen === 'game' && ((G.phase === 'campaign' && G.camp.event) || (G.phase === 'gov' && G.gov.events[0]));
   const key = ev ? ev.id + JSON.stringify(ev.ctx) + (G.camp ? G.camp.week : '') + (G.gov ? G.gov.q : '') : null;
-  if (key && key !== UI.lastEvent) Sound.play('news');
+  if (key && key !== UI.lastEvent) { Sound.play(G.phase === 'gov' ? 'alarm' : 'news'); if (G.phase === 'gov') FX.shake(); }
+  else if ($('.swipe') || $('.bigcard.flipin')) Sound.play('flip');
   UI.lastEvent = key;
 }
 
@@ -2079,7 +2493,7 @@ function bindSwipe() {
   if (!card) return;
   let x0 = null, dx = 0;
   const can = card.dataset.can === '1';
-  card.addEventListener('pointerdown', e => { x0 = e.clientX; dx = 0; card.setPointerCapture(e.pointerId); card.style.transition = 'none'; });
+  card.addEventListener('pointerdown', e => { if (UI.busy) return; x0 = e.clientX; dx = 0; card.setPointerCapture(e.pointerId); card.style.transition = 'none'; card.style.animation = 'none'; });
   card.addEventListener('pointermove', e => {
     if (x0 === null) return;
     dx = e.clientX - x0;
@@ -2092,112 +2506,241 @@ function bindSwipe() {
     if (x0 === null) return;
     x0 = null;
     card.style.transition = 'transform .25s';
-    if (dx > 80 && can) flyOut(card, 1, () => ACTIONS.playcard());
-    else if (dx < -80) flyOut(card, -1, () => ACTIONS.skipcard());
+    if (dx > 80 && can) run(() => decideIdea(true, card));
+    else if (dx < -80) run(() => decideIdea(false, card));
     else { card.style.transform = ''; card.querySelectorAll('.stamp').forEach(s => { s.style.opacity = 0; }); }
   };
   card.addEventListener('pointerup', end);
   card.addEventListener('pointercancel', end);
 }
 
-function flyOut(card, dir, then) {
+async function flyOut(card, dir) {
   buzz(15); Sound.play('swipe');
-  card.style.transform = `translateX(${dir * 520}px) rotate(${dir * 30}deg)`;
-  setTimeout(then, 200);
+  card.style.transition = 'transform .3s ease-in';
+  card.style.animation = 'none';
+  card.style.transform = `translateX(${dir * 560}px) rotate(${dir * 30}deg)`;
+  await wait(260);
 }
 
-function finishQuarter() {
+// Run an animated sequence; taps are ignored until it finishes.
+async function run(fn) {
+  if (UI.busy) return;
+  UI.busy = true;
+  try { await fn(); } finally { UI.busy = false; }
+}
+
+// ---------------- animated sequences ----------------
+
+// How good a choice turned out, judged from what changed (positive = good).
+function moodSnapshot() {
+  if (G.phase === 'gov') return BLOCS.reduce((t, b) => t + G.gov.blocMods[b.id], 0) + G.trust + G.gov.allies.reduce((t, a) => t + a.sat, 0) * .2;
+  if (G.camp) return G.camp.momentum * 2 + G.trust + BLOCS.reduce((t, b) => t + G.appeal.you[b.id], 0) - G.camp.momA;
+  return 0;
+}
+
+async function campaignMove(i, btn) {
+  const c = UI.deal[i], C = G.camp, s = c.s && stateById(c.s);
+  const before = livePoll().youBloc, trust0 = G.trust;
+  // the chosen card pops forward, the others slide away
+  document.querySelectorAll('.mcard').forEach(el => el.classList.add(el === btn ? 'picked' : 'away'));
+  buzz(15);
+  await wait(380);
+  if (c.k === 'alliance') {
+    Sound.play('drumroll');
+    await FX.burst('🤝', `Asking ${s.reg.short}…`, 'wait', '🤞🤞🤞');
+  }
+  const r = campaignAction(c.k, c.s, false);
+  if (r.err) { UI.deal = null; return handle(r); }
+  UI.live = pollSnapshot();
+  const gain = UI.live.youBloc - before, seats = gain > 0 ? `+${gain} seats!` : '';
+  if (c.k === 'rally') { Sound.play('cheer'); await FX.burst('📣', `Big crowd in ${s.name}!`, 'good', seats || '🙌 People love you'); }
+  if (c.k === 'alliance') {
+    if (C.alliances[c.s] === 'you') { Sound.play('win'); await FX.burst('🎉', `${s.reg.short} is your friend!`, 'good', seats || `${s.name} is with you`); }
+    else { Sound.play('bad'); await FX.burst('😕', 'They said no…', 'bad', 'Try again later'); }
+  }
+  if (c.k === 'ads') { Sound.play('tv'); await FX.burst('📺', 'Everyone saw your ad!', 'good', seats); }
+  if (c.k === 'fundraise') {
+    Sound.play('coin');
+    const money = $('.money');
+    await FX.fly('🪙', btn, money, 8);
+    if (money) { FX.countUp(money, Math.round(C.funds) - 50, Math.round(C.funds), 500); money.parentElement.classList.add('hop'); }
+  }
+  if (c.k === 'attack') {
+    Sound.play('sword');
+    await wait(250);
+    if (G.trust < trust0) { Sound.play('bad'); await FX.burst('😬', 'Oops! That went wrong.', 'bad'); }
+    else { Sound.play('good'); await FX.burst('⚔️', 'RSP looks bad!', 'good', seats); }
+  }
+  UI.deal = null;
+  if (G.camp.ap === 0) return endOfWeek();
+  render();
+}
+
+async function endOfWeek() {
+  const C = G.camp;
+  const before = livePoll();
+  const w = endWeek();
+  if (w.err) return toast(w.err, 'bad');
+  if (w.election) {
+    UI.live = null; UI.reveal = null; UI.tugPrev = null;
+    await FX.banner('🗳️ ELECTION DAY!', 'Let\'s count the votes', 'gold', 1500);
+    return render();
+  }
+  // the rival takes its turn
+  const moves = (C.rivalMoves || []).slice(0, 3);
+  const line = m => {
+    const s = m.s && stateById(m.s);
+    if (m.k === 'ads') return '📺 RSP showed TV ads';
+    if (m.k === 'rally') return `📣 RSP held a rally in ${s.name}`;
+    if (m.k === 'ally') return `🤝 RSP made friends in ${s.name}!`;
+    if (m.k === 'steal') return `💔 RSP stole your friend in ${s.name}!`;
+    return '';
+  };
+  const hurt = moves.some(m => m.k === 'ally' || m.k === 'steal');
+  Sound.play('down');
+  await FX.burst(RIVAL_FACE, "RSP's turn!", hurt ? 'bad' : 'rival', moves.map(line).join('<br>') || 'RSP is planning…');
+  UI.live = null;
+  const after = livePoll(), d = after.youBloc - before.youBloc;
+  UI.tugPrev = { you: before.youBloc, A: before.aBloc };
+  await FX.banner(`WEEK ${C.week}`, d >= 0 ? `📈 Poll: you +${d} seats` : `📉 Poll: you ${d} seats`, d >= 0 ? 'green' : 'red');
+  Sound.play(d >= 0 ? 'up' : 'down');
+  render();
+}
+
+async function choosePromise(id, btn) {
+  document.querySelectorAll('.mcard').forEach(el => el.classList.add(el === btn ? 'picked' : 'away'));
+  Sound.play('stamp'); buzz(15);
+  await wait(450);
+  UI.picked = (UI.picked || []).concat(id); UI.pdeal = null;
+  if (UI.picked.length === 3) {
+    choosePromises(UI.picked); UI.picked = [];
+    UI.live = null;
+    Sound.play('cheer');
+    await FX.burst('📣', 'Promises announced!', 'good', 'The campaign begins!');
+    await FX.banner('WEEK 1', 'Get 272 seats to win 👑', 'gold');
+  }
+  render();
+}
+
+async function answerEvent(kind, i, btn) {
+  const isGov = kind === 'gev';
+  const ev = isGov ? G.gov.events[0] : G.camp.event;
+  const icon = (isGov ? GOV_EVENTS : CAMPAIGN_EVENTS).find(e => e.id === ev.id).icon;
+  btn.classList.add('chosen');
+  const m0 = moodSnapshot();
+  const r = isGov ? resolveGovEvent(i) : resolveCampaignEvent(i);
+  if (r.err) { btn.classList.remove('chosen'); return toast(r.err, 'bad'); }
+  buzz(15);
+  if (r.phaseChange || G.phase !== (isGov ? 'gov' : 'campaign')) {
+    UI.deal = null; UI.pdeal = null; UI.picked = []; UI.live = null; UI.tugPrev = null; UI.meterPrev = null;
+    await FX.burst('🗳️', r.msg, 'bad');
+    return render();
+  }
+  const good = moodSnapshot() >= m0;
+  Sound.play(good ? 'good' : 'bad');
+  await FX.burst(good ? icon : '😬', r.msg, good ? 'good' : 'bad');
+  if (!isGov) { UI.deal = null; UI.live = pollSnapshot(); }
+  render();
+}
+
+async function decideIdea(yes, card) {
+  const g = G.gov;
+  if (!yes) {
+    await flyOut(card, -1);
+    UI.card++;
+    if (UI.card >= g.hand.length) return finishQuarter();
+    return render();
+  }
+  const r = playCard(UI.card);
+  if (r.err) { toast(r.err, 'bad'); return render(); }
+  card.style.animation = 'none';
+  card.style.transform = '';
+  const stamp = document.createElement('div');
+  stamp.className = 'bigstamp ' + (r.fail ? 'no' : 'yes');
+  stamp.textContent = r.fail ? 'FAILED' : 'PASSED!';
+  card.appendChild(stamp);
+  Sound.play('stamp'); buzz(30);
+  await wait(350);
+  if (r.fail) { Sound.play('bad'); FX.shake(); } else { Sound.play('good'); FX.confetti(70); }
+  await wait(900);
+  await flyOut(card, 1);
+  await finishQuarter();
+}
+
+async function finishQuarter() {
   const before = overallApproval();
   const r = endQuarter();
   if (r.err) { toast(r.err, 'bad'); return render(); }
   UI.card = 0;
   if (G.phase === 'gov') {
-    const d = Math.round(overallApproval() - before);
-    toast(d >= 0 ? '😀 People are happier!' : '😟 People are less happy', d >= 0 ? 'good' : 'bad');
+    const d = overallApproval() - before;
+    await FX.banner(`📅 ${quarterLabel(G.calQ)}`, d >= 0 ? '😀 People are happier!' : '😟 People are less happy', d >= 0 ? 'green' : 'red');
+  } else if (G.phase === 'termreport') {
+    Sound.play('win');
+    await FX.banner('🏁 5 YEARS DONE!', 'Time for the next election', 'gold', 1500);
+  } else {
+    UI.tugPrev = null; UI.meterPrev = null;
   }
   render();
 }
 
+async function budgetChoice(k, btn) {
+  btn.classList.add('chosen');
+  const r = budgetPreset(k);
+  if (r.err) return handle(r);
+  Sound.play('coin');
+  await FX.fly('🪙', btn, $('.meters'), 8);
+  const p = BUDGET_PRESETS[k];
+  Sound.play('good');
+  await FX.burst(p.icon, `${p.name}!`, 'good', 'Money Day is done');
+  render();
+}
+
+async function coalitionOffer(key, offer, btn) {
+  const k = G.coal.kingmakers.find(x => x.key === key);
+  btn.classList.add('chosen');
+  Sound.play('drumroll');
+  await FX.burst('🤝', `Asking ${k.short}…`, 'wait', '🤞🤞🤞');
+  const r = coalOffer(key, offer); save();
+  if (r.err) return handle(r);
+  if (k.side === 'you') { Sound.play('win'); await FX.burst('🎉', `${k.short} joins you!`, 'good', `+${k.seats} seats`); }
+  else { Sound.play('bad'); await FX.burst('😕', `${k.short} said no.`, 'bad'); }
+  render();
+}
+
 const ACTIONS = {
-  continue() { if (load()) { UI.screen = 'game'; UI.deal = null; UI.card = 0; render(); } },
+  continue() { if (load()) { UI.screen = 'game'; UI.deal = null; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null; render(); } },
   newgame() { UI.setup = { leader: '', symbol: PARTY_SYMBOLS[0], color: PARTY_COLORS[0] }; UI.screen = 'setup'; G = null; render(); },
   help() { openModal(helpHTML()); },
   closemodal() { closeModal(); },
-  setsym(d) { UI.setup.leader = $('#f-leader').value; UI.setup.symbol = d.v; UI.setup.color = d.c; buzz(8); render(); },
+  setsym(d) { UI.setup.leader = $('#f-leader').value; UI.setup.symbol = d.v; UI.setup.color = d.c; buzz(8); Sound.play('up'); render(); },
   start() {
     const name = ($('#f-leader').value || '').trim() || 'Asha Verma';
     const s = UI.setup;
     newGame({ leader: name, party: 'Jan Shakti Party', short: 'JSP', symbol: s.symbol, color: s.color, ideology: 'centrist', difficulty: 'normal' });
-    UI.screen = 'game'; UI.reveal = null; UI.deal = null; UI.pdeal = null; UI.picked = []; UI.card = 0;
+    UI.screen = 'game'; UI.reveal = null; UI.deal = null; UI.pdeal = null; UI.picked = []; UI.card = 0; UI.live = null; UI.tugPrev = null; UI.meterPrev = null;
     render();
     let seen = false; try { seen = !!localStorage.getItem('rajneeti.seenHelp'); localStorage.setItem('rajneeti.seenHelp', '1'); } catch (e) { /* ignore */ }
     if (!seen) openModal(helpHTML());
   },
-  promise(d) {
-    buzz(10);
-    UI.picked = (UI.picked || []).concat(d.id); UI.pdeal = null;
-    if (UI.picked.length === 3) { choosePromises(UI.picked); UI.picked = []; toast('📣 Promises announced!', 'good'); }
-    render();
-  },
-  move(d) {
-    const c = UI.deal[+d.i];
-    const before = G.camp.polls[G.camp.polls.length - 1].youBloc;
-    const trust0 = G.trust;
-    const r = campaignAction(c.k, c.s, false);
-    if (r.err) return handle(r);
-    const s = c.s && stateById(c.s);
-    const say = {
-      rally: `📣 Big crowd in ${s && s.name}!`,
-      alliance: s && G.camp.alliances[c.s] === 'you' ? `🤝 New friend in ${s.name}! 🎉` : '😕 They said no. Try later.',
-      ads: '📺 Everyone saw your ad!',
-      fundraise: '💰 You got more money!',
-      attack: G.trust < trust0 ? '😬 Oops! That went wrong.' : '⚔️ It worked! RSP looks bad.',
-    }[c.k];
-    toast(say, say.startsWith('😕') || say.startsWith('😬') ? 'bad' : 'good'); buzz(15);
-    UI.deal = null;
-    if (G.camp.ap === 0) {
-      const w = endWeek();
-      if (!w.election) {
-        const now = G.camp.polls[G.camp.polls.length - 1].youBloc;
-        toast(now >= before ? `📈 You went up ${now - before} seats!` : `📉 You went down ${before - now} seats`, now >= before ? 'good' : 'bad');
-      } else UI.reveal = null;
-    }
-    render();
-  },
-  cev(d) { UI.deal = null; handle(resolveCampaignEvent(+d.i)); },
+  promise(d, el) { run(() => choosePromise(d.id, el)); },
+  move(d, el) { run(() => campaignMove(+d.i, el)); },
+  cev(d, el) { run(() => answerEvent('cev', +d.i, el)); },
+  gev(d, el) { run(() => answerEvent('gev', +d.i, el)); },
   skipreveal() {
     clearTimeout(UI.reveal.timer); UI.reveal.n = 999;
-    const r = G.result; Sound.play(r.youBloc >= MAJORITY ? 'win' : r.aBloc >= MAJORITY ? 'lose' : 'news');
-    render();
+    render(); finishReveal();
   },
   afterresults() {
-    UI.reveal = null; afterResults(); save(); UI.card = 0; render();
+    UI.reveal = null; afterResults(); save(); UI.card = 0; UI.tugPrev = null; UI.meterPrev = null; render();
     if (G.phase === 'gov') welcomePM();
   },
-  offer(d) {
-    const k = G.coal.kingmakers.find(x => x.key === d.k);
-    const r = coalOffer(d.k, d.o); save();
-    if (r.err) return handle(r);
-    toast(k.side === 'you' ? `🎉 ${k.short} joins you!` : `😕 ${k.short} said no.`, k.side === 'you' ? 'good' : 'bad'); buzz(15);
-    render();
-  },
-  coalround() { coalEndRound(); save(); UI.card = 0; render(); if (G.phase === 'gov') welcomePM(); },
-  gev(d) {
-    const r = resolveGovEvent(+d.i);
-    if (r.err) { toast(r.err, 'bad'); return; }
-    toast(r.msg, 'good'); buzz(15);
-    if (r.phaseChange) { UI.deal = null; UI.pdeal = null; UI.picked = []; }
-    render();
-  },
-  preset(d) { const r = budgetPreset(d.k); if (r.err) return handle(r); toast(`${BUDGET_PRESETS[d.k].icon} Done!`, 'good'); render(); },
-  playcard() {
-    const r = playCard(UI.card);
-    if (r.err) { toast(r.err, 'bad'); return render(); }
-    finishQuarter();
-    toast(r.fail ? '😞 Not enough votes. It did not pass.' : '🎉 Yes! It is done!', r.fail ? 'bad' : 'good');
-  },
-  skipcard() { UI.card++; if (UI.card >= G.gov.hand.length) finishQuarter(); else render(); },
-  endq() { finishQuarter(); },
+  offer(d, el) { run(() => coalitionOffer(d.k, d.o, el)); },
+  coalround() { coalEndRound(); save(); UI.card = 0; UI.meterPrev = null; render(); if (G.phase === 'gov') welcomePM(); },
+  preset(d, el) { run(() => budgetChoice(d.k, el)); },
+  playcard() { const card = $('.swipe'); if (card) run(() => decideIdea(true, card)); },
+  skipcard() { const card = $('.swipe'); if (card) run(() => decideIdea(false, card)); },
+  endq() { run(finishQuarter); },
   stats() {
     const e = G.eco;
     openModal(`<h2>🇮🇳 India</h2>
@@ -2214,8 +2757,8 @@ const ACTIONS = {
     openModal(`<h2>🤝 Friends</h2>${g.allies.map(a => `<div class="srow"><span>${a.sat >= 50 ? '😀' : a.sat >= 30 ? '😐' : '😠'} ${esc(a.short)} · ${a.seats} seats</span><button class="gbtn small orange" data-a="pkggo" data-k="${a.key}" ${g.pc < 1 ? 'disabled' : ''}>🎁 1⭐</button></div>`).join('') || '<p>No allies.</p>'}
       <button class="gbtn green" data-a="closemodal">OK</button>`);
   },
-  pkggo(d) { const r = allyPackage(d.k); if (r.err) return handle(r); toast('🎁 Your friend is happy!', 'good'); render(); },
-  reelect() { goToElection(false); UI.deal = null; UI.pdeal = null; UI.picked = []; render(); },
+  pkggo(d) { const r = allyPackage(d.k); if (r.err) return handle(r); Sound.play('good'); toast('🎁 Your friend is happy!', 'good'); render(); },
+  reelect() { goToElection(false); UI.deal = null; UI.pdeal = null; UI.picked = []; UI.live = null; UI.tugPrev = null; render(); },
   menu() {
     openModal(`<h2>Menu</h2><div class="answers">
       <button class="gbtn blue" data-a="soundmenu">🔊 Sound</button>
@@ -2241,18 +2784,21 @@ const ACTIONS = {
 };
 
 function welcomePM() {
-  openModal(`<div class="center"><div class="emo">🇮🇳</div><h2>You are Prime Minister!</h2>
+  Sound.play('win'); FX.confetti(150);
+  openModal(`<div class="center"><div class="emo wobble">🇮🇳</div><h2>You are Prime Minister!</h2>
     <p>Ideas will come to you.<br><b>Swipe right = YES</b> · <b>left = NO</b></p>
-    <p>Keep the 4 meters green! 🟩</p><p>Each idea needs ⭐ energy. Happy people give you more.</p><button class="gbtn green" data-a="closemodal">LET'S GO ▶</button></div>`);
+    <p>Keep the 4 meters green! 🟩</p><p>Each idea needs ⭐ energy. Happy people give you more.</p><button class="gbtn green glow" data-a="closemodal">LET'S GO ▶</button></div>`);
 }
 
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]');
   if (!el || el.disabled) return;
   Sound.unlock();
-  if (el.dataset.a !== 'mute') Sound.play('tap');
+  const a = el.dataset.a;
+  if (UI.busy && a !== 'mute') return;
+  if (a !== 'mute') Sound.play('tap');
   if ($('#popup')) { if (!el.closest('#popup')) return; closeModal(); }
-  ACTIONS[el.dataset.a] && ACTIONS[el.dataset.a](el.dataset);
+  ACTIONS[a] && ACTIONS[a](el.dataset, el);
 });
 
 // Volume sliders change the sound as you drag; play a sample so the level is easy to judge.
