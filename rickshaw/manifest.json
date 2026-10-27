@@ -1,0 +1,11 @@
+{
+  "name": "Rickshaw Rush",
+  "short_name": "Rickshaw Rush",
+  "description": "Drive an auto-rickshaw through busy Indian streets",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffb703",
+  "theme_color": "#ffb703",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
