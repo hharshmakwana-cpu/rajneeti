@@ -150,9 +150,10 @@ function preview(type) {
     if (!H.pr) {
       H.pr = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
       H.pr.setSize(160, 160);
+      H.pr.outputEncoding = THREE.sRGBEncoding;
       H.ps = new THREE.Scene();
-      H.ps.add(new THREE.HemisphereLight('#ffffff', '#88aa66', .9));
-      const l = new THREE.DirectionalLight('#ffffff', .9); l.position.set(3, 5, 4); H.ps.add(l);
+      H.ps.add(new THREE.HemisphereLight('#ffffff', '#88aa66', 1.1));
+      const l = new THREE.DirectionalLight('#fff4e0', 1.6); l.position.set(3, 5, 4); H.ps.add(l);
       H.pc = new THREE.PerspectiveCamera(30, 1, .1, 50);
     }
     const g = Models.build(type, 1, S.color), size = BUILDINGS[type].size;

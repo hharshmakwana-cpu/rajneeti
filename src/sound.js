@@ -4,11 +4,11 @@
 // shehnai, harmonium and tanpura drone. Rally chants use the device's voice.
 
 const Sound = (() => {
-  const KEY = 'rajneeti.sound';
-  const settings = { sfx: .85, music: .7, muted: false };
+  const KEY = 'rajneeti.sound.v2';
+  const settings = { sfx: .5, music: .35, muted: false };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* storage blocked */ }
 
-  let ctx = null, sfxBus = null, musicBus = null, verb = null, noiseBuf = null, keepAlive = null;
+  let ctx = null, out = null, sfxBus = null, musicBus = null, verb = null, noiseBuf = null, keepAlive = null;
   let mode = 'title', step = 0, nextAt = 0;
   const plucks = new Map();
 
@@ -17,8 +17,8 @@ const Sound = (() => {
   function applyVolumes() {
     if (!ctx) return;
     const t = ctx.currentTime;
-    sfxBus.gain.setTargetAtTime(settings.muted ? 0 : settings.sfx, t, .03);
-    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .9, t, .15);
+    sfxBus.gain.setTargetAtTime(settings.muted ? 0 : settings.sfx * .7, t, .03);
+    musicBus.gain.setTargetAtTime(settings.muted ? 0 : settings.music * .55, t, .15);
     if (keepAlive) keepAlive.muted = settings.muted;
   }
 
@@ -29,8 +29,8 @@ const Sound = (() => {
       for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
     }
     const conv = ctx.createConvolver(); conv.buffer = ir;
-    const wet = ctx.createGain(); wet.gain.value = .25;
-    conv.connect(wet); wet.connect(ctx.destination);
+    const wet = ctx.createGain(); wet.gain.value = .16;
+    conv.connect(wet); wet.connect(out);
     return conv;
   }
 
@@ -52,9 +52,15 @@ const Sound = (() => {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       ctx = new AC();
+      // master chain: a warm low-pass and a compressor, so nothing is shrill or loud
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -22; comp.knee.value = 18; comp.ratio.value = 4; comp.attack.value = .01; comp.release.value = .25;
+      out = ctx.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 5200; out.Q.value = .5;
+      const master = ctx.createGain(); master.gain.value = .8;
+      out.connect(comp); comp.connect(master); master.connect(ctx.destination);
       verb = makeReverb();
-      sfxBus = ctx.createGain(); sfxBus.connect(ctx.destination); sfxBus.connect(verb);
-      musicBus = ctx.createGain(); musicBus.connect(ctx.destination); musicBus.connect(verb);
+      sfxBus = ctx.createGain(); sfxBus.connect(out); sfxBus.connect(verb);
+      musicBus = ctx.createGain(); musicBus.connect(out); musicBus.connect(verb);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -133,10 +139,10 @@ const Sound = (() => {
       else o.frequency.setValueAtTime(freq, t);
     });
     o2.detune.value = 7;
-    lfo.frequency.value = 5.5; lg.gain.value = freq * .012;
+    lfo.frequency.value = 5; lg.gain.value = freq * .008;
     lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency);
-    bp.type = 'bandpass'; bp.frequency.value = 1300; bp.Q.value = 1.4;
-    lp.type = 'lowpass'; lp.frequency.value = 3800;
+    bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 1.1;
+    lp.type = 'lowpass'; lp.frequency.value = 2300;
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(vol, t + .05);
     g.gain.setValueAtTime(vol, t + dur * .8);
@@ -149,8 +155,8 @@ const Sound = (() => {
   function harmonium(freqs, dur, { at = 0, vol = .035 } = {}) {
     for (const f of freqs) for (const d of [-4, 4]) {
       const t = ctx.currentTime + at, o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
-      o.type = 'square'; o.frequency.value = f; o.detune.value = d;
-      lp.type = 'lowpass'; lp.frequency.value = 1600;
+      o.type = 'triangle'; o.frequency.value = f; o.detune.value = d;
+      lp.type = 'lowpass'; lp.frequency.value = 1200;
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .12);
       g.gain.setValueAtTime(vol, t + dur - .1); g.gain.linearRampToValueAtTime(0, t + dur);
       o.connect(lp); lp.connect(g); g.connect(musicBus);
@@ -160,13 +166,13 @@ const Sound = (() => {
 
   // Drums: dhol has a deep bass head (dagga) and a sharp stick side (tilli).
   const dholBass = (at, vol = .55, bus = musicBus) => { tone(95, .38, { at, vol, to: 52, bus }); noise(.05, { at, vol: vol * .25, freq: 300, q: .7, bus }); };
-  const dholTilli = (at, vol = .22, bus = musicBus) => { noise(.05, { at, vol, freq: 3200, q: 1.5, bus }); tone(540, .05, { at, vol: vol * .5, type: 'triangle', bus }); };
+  const dholTilli = (at, vol = .22, bus = musicBus) => { noise(.04, { at, vol: vol * .6, freq: 2000, q: 1.2, bus }); tone(480, .06, { at, vol: vol * .5, type: 'triangle', bus }); };
   const tablaDha = (at, vol = .3) => { tone(110, .3, { at, vol, to: 80, bus: musicBus }); tone(520, .5, { at, vol: vol * .4, bus: musicBus }); };
   const tablaNa = (at, vol = .22) => { tone(520, .35, { at, vol, bus: musicBus }); tone(1560, .12, { at, vol: vol * .3, bus: musicBus }); };
   const tablaGe = (at, vol = .3) => tone(120, .22, { at, vol, to: 70, bus: musicBus });
-  const manjira = (at, vol = .06) => { tone(3520, .45, { at, vol, bus: musicBus }); tone(5280, .3, { at, vol: vol * .6, bus: musicBus }); };
+  const manjira = (at, vol = .06) => { tone(2640, .4, { at, vol: vol * .6, bus: musicBus }); tone(3960, .25, { at, vol: vol * .3, bus: musicBus }); };
   // a crowd "Hoy!" shout, as in bhangra
-  const hoy = (at, vol = .1) => { tone(240, .2, { at, vol, type: 'sawtooth', to: 190, lp: 1200, bus: musicBus }); noise(.18, { at, vol: vol * .8, freq: 900, q: 3, bus: musicBus }); };
+  const hoy = (at, vol = .1) => { tone(240, .2, { at, vol: vol * .6, type: 'triangle', to: 190, lp: 900, bus: musicBus }); noise(.16, { at, vol: vol * .4, freq: 800, q: 3, bus: musicBus }); };
 
   // ---------- note names (Sa = C4) ----------
   const SA = 261.63;
@@ -176,29 +182,29 @@ const Sound = (() => {
   const SFX = {
     tap: () => { tablaNa(0, .12); },
     pop: () => { tone(700, .08, { vol: .2, to: 1300 }); tablaNa(0, .1); },
-    oops: () => { tone(300, .2, { type: 'sawtooth', vol: .1, to: 150, lp: 900 }); },
-    deal: () => [0, .07, .14].forEach(at => noise(.08, { at, vol: .16, freq: 1800, to: 4000, q: .8 })),
-    flip: () => { noise(.12, { vol: .18, freq: 900, to: 3000 }); },
-    swipe: () => noise(.28, { vol: .3, freq: 500, to: 4500, q: .7 }),
+    oops: () => { tone(300, .2, { type: 'triangle', vol: .08, to: 160 }); },
+    deal: () => [0, .07, .14].forEach(at => noise(.08, { at, vol: .06, freq: 1500, to: 2600, q: .8 })),
+    flip: () => { noise(.12, { vol: .07, freq: 800, to: 2000 }); },
+    swipe: () => noise(.22, { vol: .1, freq: 500, to: 2200, q: .7 }),
     good: () => { [0, 4, 7, 12].forEach((n, i) => pluck(r(n + 12), { at: i * .06, vol: .5, bus: sfxBus })); manjira(.25, .08); },
     bad: () => { shehnai(r(3), .35, { vol: .12, bus: sfxBus }); shehnai(r(1), .6, { at: .3, vol: .12, from: r(3), bus: sfxBus }); },
-    coin: () => [0, .07, .14, .21].forEach((at, i) => { tone(1300 + i * 220, .09, { type: 'square', vol: .05, at }); tone(2600 + i * 300, .12, { vol: .05, at: at + .03 }); }),
+    coin: () => { tone(r(19), .35, { vol: .06 }); tone(r(24), .45, { at: .07, vol: .05 }); },
     cheer: () => {
-      noise(1.5, { vol: .32, freq: 900, q: .6, attack: .25 });
-      noise(1.3, { vol: .18, freq: 2200, q: 1.5, attack: .2, at: .05 });
+      noise(1.5, { vol: .14, freq: 800, q: .6, attack: .25 });
+      noise(1.3, { vol: .07, freq: 1800, q: 1.5, attack: .2, at: .05 });
       [0, .22, .44, .66].forEach((at, i) => { dholBass(at, .5, sfxBus); dholTilli(at + .11, .2, sfxBus); if (i % 2) hoy(at, .12); });
     },
     drumroll: () => { for (let i = 0; i < 18; i++) dholTilli(i * .045, .06 + i * .012, sfxBus); dholBass(.85, .6, sfxBus); },
-    stamp: () => { tone(160, .3, { vol: .5, to: 50 }); noise(.12, { vol: .3, freq: 600, q: .5 }); },
+    stamp: () => { tone(160, .3, { vol: .3, to: 50 }); noise(.12, { vol: .1, freq: 500, q: .5 }); },
     news: () => { manjira(0, .12); manjira(.18, .12); },
     alarm: () => { shehnai(r(12), .25, { vol: .14, bus: sfxBus }); shehnai(r(13), .25, { at: .25, vol: .14, bus: sfxBus }); shehnai(r(12), .4, { at: .5, vol: .14, bus: sfxBus }); },
-    sword: () => { noise(.25, { vol: .3, freq: 5000, to: 1500, q: 4 }); tone(1200, .4, { type: 'triangle', vol: .08, to: 1500 }); },
+    sword: () => { noise(.25, { vol: .1, freq: 3000, to: 1200, q: 4 }); tone(1200, .4, { type: 'triangle', vol: .05, to: 1500 }); },
     tv: () => [0, 4, 7, 12].forEach((n, i) => shehnai(r(n + 12), .14, { at: i * .1, vol: .08, bus: sfxBus })),
-    bus: () => { tone(392, .22, { type: 'square', vol: .07, lp: 1800 }); tone(330, .3, { type: 'square', vol: .07, at: .25, lp: 1800 }); noise(.7, { vol: .1, type: 'lowpass', freq: 300, at: .1, attack: .2 }); },
-    plane: () => { noise(1.1, { vol: .3, freq: 400, to: 2400, q: .8, attack: .4 }); tone(180, 1, { type: 'sawtooth', vol: .03, to: 260, lp: 900 }); },
-    whoosh: () => noise(.5, { vol: .28, freq: 300, to: 3000, q: .6, attack: .2 }),
+    bus: () => { tone(392, .22, { type: 'square', vol: .04, lp: 1300 }); tone(330, .3, { type: 'square', vol: .04, at: .25, lp: 1300 }); noise(.7, { vol: .05, type: 'lowpass', freq: 300, at: .1, attack: .2 }); },
+    plane: () => { noise(1.1, { vol: .1, freq: 400, to: 1600, q: .8, attack: .4 }); tone(180, 1, { type: 'sawtooth', vol: .03, to: 260, lp: 900 }); },
+    whoosh: () => noise(.45, { vol: .1, freq: 300, to: 1800, q: .6, attack: .2 }),
     tick: () => tablaNa(0, .1),
-    count: () => { tone(880, .06, { vol: .12 }); },
+    count: () => { tone(880, .08, { vol: .06, type: 'triangle' }); },
     go: () => { dholBass(0, .6, sfxBus); hoy(0, .2); },
     up: () => [0, 4, 7].forEach((n, i) => pluck(r(n + 12), { at: i * .05, vol: .45, bus: sfxBus })),
     down: () => [7, 4, 0].forEach((n, i) => pluck(r(n), { at: i * .07, vol: .45, bus: sfxBus, bright: false })),

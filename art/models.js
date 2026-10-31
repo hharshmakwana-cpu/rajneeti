@@ -1,4 +1,4 @@
-// RICKSHAW RUSH — the 3D models, all built in code: the auto-rickshaw, people,
+// Shared 3D art kit (Rickshaw Rush and Rajneeti), all built in code: the auto-rickshaw, people,
 // a zebu cow, a state bus, fruit cart, police barricade, shops, trees, palms,
 // shrines, electric poles, bunting and a mobile tower.
 // Static models are baked into a few meshes so phones can draw a whole street.
@@ -626,5 +626,7 @@ const RM = (() => {
     return shadowAll(out);
   }
 
-  return { M, rbox, bake, rickshaw, person, animatePerson, cow, bus, cart, barrier, pothole, coin, power, building, tree, palm, lamp, pole, shrine, bunting, tower, cloud, scooter, blob };
+  // building blocks for other models (Rajneeti uses these too)
+  const kit = { mesh, rot, RB, cyl, sph, cap, tube, lathe, profile, wheel, foliage, shadowAll, CHROME, RUBBER, GLASS, GLOW, LEAF, V };
+  return { kit, M, rbox, bake, rickshaw, person, animatePerson, cow, bus, cart, barrier, pothole, coin, power, building, tree, palm, lamp, pole, shrine, bunting, tower, cloud, scooter, blob };
 })();

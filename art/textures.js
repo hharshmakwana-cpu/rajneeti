@@ -1,4 +1,4 @@
-// RICKSHAW RUSH — textures painted at start-up on canvases: asphalt, paving,
+// Shared art kit — textures painted at start-up on canvases: asphalt, paving,
 // shop fronts with Hindi/English signboards, bus livery and number plates.
 // Nothing is downloaded, so the game still works offline.
 
@@ -354,5 +354,5 @@ const RT = (() => {
     return tex(c);
   }
 
-  return { asphalt, paving, kerb, dust, facade, plaster, busSide, busFront, plate, stripes, barricade, wood, coinFace, frond, flagTex, grille, pick, rnd };
+  return { canvas, tex, grain, shade, asphalt, paving, kerb, dust, facade, plaster, busSide, busFront, plate, stripes, barricade, wood, coinFace, frond, flagTex, grille, pick, rnd };
 })();
