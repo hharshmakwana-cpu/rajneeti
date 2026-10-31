@@ -1,5 +1,5 @@
 // Caches the game so it keeps working with no connection once installed.
-const CACHE = 'rickshaw-rush-v1';
+const CACHE = 'rickshaw-rush-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', e => {
